@@ -14,6 +14,8 @@
 		6B50B9962B0302CE00AE2376 /* photo_backupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9952B0302CE00AE2376 /* photo_backupTests.swift */; };
 		6B50B9A02B0302CE00AE2376 /* photo_backupUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */; };
 		6B50B9A22B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */; };
+		6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */; };
+		6B50B9B22B034C5900AE2376 /* AppHomeIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,9 @@
 		6B50B99B2B0302CE00AE2376 /* photo backupUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "photo backupUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITests.swift; sourceTree = "<group>"; };
 		6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
+		6B50B9B02B0322B300AE2376 /* photo-backup-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "photo-backup-Info.plist"; sourceTree = SOURCE_ROOT; };
+		6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppHomeIcon.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,10 +99,13 @@
 		6B50B9832B0302CC00AE2376 /* photo backup */ = {
 			isa = PBXGroup;
 			children = (
+				6B50B9B02B0322B300AE2376 /* photo-backup-Info.plist */,
 				6B50B9842B0302CC00AE2376 /* photo_backupApp.swift */,
 				6B50B9862B0302CC00AE2376 /* ContentView.swift */,
+				6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */,
 				6B50B9882B0302CE00AE2376 /* Assets.xcassets */,
 				6B50B98A2B0302CE00AE2376 /* Preview Content */,
+				6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */,
 			);
 			path = "photo backup";
 			sourceTree = "<group>";
@@ -232,6 +240,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6B50B98C2B0302CE00AE2376 /* Preview Assets.xcassets in Resources */,
+				6B50B9B22B034C5900AE2376 /* AppHomeIcon.png in Resources */,
 				6B50B9892B0302CE00AE2376 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -258,6 +267,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6B50B9872B0302CC00AE2376 /* ContentView.swift in Sources */,
+				6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */,
 				6B50B9852B0302CC00AE2376 /* photo_backupApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -347,7 +357,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -404,7 +414,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -419,17 +429,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
 				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "photo-backup-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ArchiveAngel;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Provide access to photos to backup";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UILaunchStoryboardName = x;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -448,17 +464,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
 				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "photo-backup-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ArchiveAngel;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Provide access to photos to backup";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UILaunchStoryboardName = x;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
