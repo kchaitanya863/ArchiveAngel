@@ -65,11 +65,20 @@ struct ContentView: View {
                         }
                     }
                     
+                    // Fetch the creation date from the asset
+                    let creationDate = asset.creationDate
+                    
                     imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { (data, _, _, _) in
                         guard let data = data else { return }
 
                         do {
                             try data.write(to: fileURL)
+                            // Set the file's creation date attribute
+                            if let creationDate = creationDate {
+                                var attributes = [FileAttributeKey: Any]()
+                                attributes[.creationDate] = creationDate
+                                try FileManager.default.setAttributes(attributes, ofItemAtPath: fileURL.path)
+                            }
                             filesWrittenCount += 1
                         } catch {
                             // Handle specific errors and update the UI
