@@ -14,7 +14,23 @@ struct ContentView: View {
     @State private var progressMessage: String = ""
     @State private var currentThumbnail: UIImage?
     
+    @State private var includePhotos = true
+    @State private var includeVideos = true
+    
+    @State private var totalPhotosCount = 0
+    @State private var totalVideosCount = 0
+    
     @State private var cancelBackup = false
+    
+    private func fetchMediaCounts() {
+        let photosOptions = PHFetchOptions()
+        photosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+        totalPhotosCount = PHAsset.fetchAssets(with: photosOptions).count
+
+        let videosOptions = PHFetchOptions()
+        videosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+        totalVideosCount = PHAsset.fetchAssets(with: videosOptions).count
+    }
     
     private func startBackupProcess() {
         guard let backupFolderURL = backupFolderURL else {
@@ -37,6 +53,12 @@ struct ContentView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             let fetchOptions = PHFetchOptions()
             // Configure fetchOptions as needed
+            
+            if includePhotos && !includeVideos {
+                fetchOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
+            } else if includeVideos && !includePhotos {
+                fetchOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
+            }
 
             let assets = PHAsset.fetchAssets(with: fetchOptions)
             let assetsCount = assets.count
@@ -58,70 +80,80 @@ struct ContentView: View {
                 
                 let thumbnailSize = CGSize(width: 100, height: 100) // Adjust the size as needed
                 if !FileManager.default.fileExists(atPath: fileURL.path) {
-                    imageManager.requestImage(for: asset, targetSize: thumbnailSize, contentMode: .aspectFill, options: requestOptions) { (image, _) in
-                        DispatchQueue.main.async {
-                            self.currentThumbnail = image
-                            self.progressMessage = "Copying: \(safeFileName)"
-                        }
-                    }
-                    
-                    // Fetch the creation date from the asset
-                    let creationDate = asset.creationDate
-                    
-                    imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { (data, _, _, _) in
-                        guard let data = data else { return }
-
-                        do {
-                            try data.write(to: fileURL)
-                            // Set the file's creation date attribute
-                            if let creationDate = creationDate {
-                                var attributes = [FileAttributeKey: Any]()
-                                attributes[.creationDate] = creationDate
-                                try FileManager.default.setAttributes(attributes, ofItemAtPath: fileURL.path)
-                            }
-                            filesWrittenCount += 1
-                        } catch {
-                            // Handle specific errors and update the UI
-                            DispatchQueue.main.async {
-                                self.showingAlert = true
-                                if let nsError = error as NSError? {
-                                    // Check for specific error codes and set a user-friendly message
-                                    switch nsError.code {
-                                    case NSFileWriteOutOfSpaceError:
-                                        self.completionMessage = "Backup failed: Out of disk space."
-                                    default:
-                                        self.completionMessage = "Backup failed: \(nsError.localizedDescription)"
-                                    }
-                                } else {
-                                    self.completionMessage = "Backup failed: An unknown error occurred."
-                                }
-                                print("Error writing file: \(error.localizedDescription)") // Logging the error
-                            }
-                        }
+                imageManager.requestImage(for: asset, targetSize: thumbnailSize, contentMode: .aspectFill, options: requestOptions) { (image, _) in
+                    DispatchQueue.main.async {
+                        self.currentThumbnail = image
+                        self.progressMessage = "Copying: \(safeFileName)"
                     }
                 }
+                    
+                // Fetch the creation date from the asset
+                let creationDate = asset.creationDate
+                
+                    imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { (data, dataUTI, orientation, info) in
+                        guard let data = data, let dataUTIString = dataUTI else { return }
 
-                DispatchQueue.main.async {
-                    self.backupProgress = Double(index + 1) / Double(assetsCount) * 100.0
+                        let fileExtension: String
+                        if let uti = UTType(dataUTIString), let preferredExtension = uti.preferredFilenameExtension {
+                            fileExtension = preferredExtension
+                        } else {
+                            fileExtension = "jpg" // Default to jpg if the UTType can't be determined
+                        }
+
+                        let safeFileName = asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + ".\(fileExtension)"
+                        let fileURL = backupFolderURL.appendingPathComponent(safeFileName)
+
+                    do {
+                        try data.write(to: fileURL)
+                        // Set the file's creation date attribute
+                        if let creationDate = creationDate {
+                            var attributes = [FileAttributeKey: Any]()
+                            attributes[.creationDate] = creationDate
+                            try FileManager.default.setAttributes(attributes, ofItemAtPath: fileURL.path)
+                        }
+                        filesWrittenCount += 1
+                    } catch {
+                        // Handle specific errors and update the UI
+                        DispatchQueue.main.async {
+                            self.showingAlert = true
+                            if let nsError = error as NSError? {
+                                // Check for specific error codes and set a user-friendly message
+                                switch nsError.code {
+                                case NSFileWriteOutOfSpaceError:
+                                    self.completionMessage = "Backup failed: Out of disk space."
+                                default:
+                                    self.completionMessage = "Backup failed: \(nsError.localizedDescription)"
+                                }
+                            } else {
+                                self.completionMessage = "Backup failed: An unknown error occurred."
+                            }
+                            print("Error writing file: \(error.localizedDescription)") // Logging the error
+                        }
+                    }
                 }
             }
 
             DispatchQueue.main.async {
-                self.isBackupInProgress = false
-                self.currentThumbnail = nil
-                self.progressMessage = ""
-                backupFolderURL.stopAccessingSecurityScopedResource()
+                self.backupProgress = Double(index + 1) / Double(assetsCount) * 100.0
+            }
+        }
 
-                if self.cancelBackup {
-                    self.completionMessage = "Backup canceled."
-                    self.cancelBackup = false
-                } else {
-                    let totalFiles = (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
-                    self.completionMessage = "Copying complete. Files written: \(filesWrittenCount), Total files in folder: \(totalFiles)"
-                }
+        DispatchQueue.main.async {
+            self.isBackupInProgress = false
+            self.currentThumbnail = nil
+            self.progressMessage = ""
+            backupFolderURL.stopAccessingSecurityScopedResource()
+
+            if self.cancelBackup {
+                self.completionMessage = "Backup canceled."
+                self.cancelBackup = false
+            } else {
+                let totalFiles = (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
+                self.completionMessage = "Copying complete. Files written: \(filesWrittenCount), Total files in folder: \(totalFiles)"
             }
         }
     }
+}
 
 
     var body: some View {
@@ -144,6 +176,15 @@ struct ContentView: View {
                     }
                 }
             }
+            
+            Text("Photos: \(totalPhotosCount), Videos: \(totalVideosCount)")
+                .onAppear(perform: fetchMediaCounts)
+                .padding()
+            
+            Toggle("Include Photos", isOn: $includePhotos)
+                .padding()
+            Toggle("Include Videos", isOn: $includeVideos)
+                .padding()
 
             // Only show the 'Backup Photos' button if the backup is not in progress
             if !isBackupInProgress {
