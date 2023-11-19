@@ -17,11 +17,6 @@ jobs:
       with:
         xcode-version: 'latest' # Specify your Xcode version here
 
-    - name: Install Dependencies
-      run: |
-        sudo gem install cocoapods # if you use CocoaPods
-        pod install --repo-update  # if you use CocoaPods
-
     - name: Build IPA
       run: |
         xcodebuild -workspace 'photo backup.xcodeproj' \
@@ -44,7 +39,7 @@ jobs:
         xcodebuild -exportArchive \
                    -archivePath './build/YourAppName.xcarchive' \
                    -exportPath './build' \
-                   -exportOptionsPlist 'ExportOptions.plist' # You need to have this file configured
+                   -exportOptionsPlist 'ExportOptions.plist' # Ensure this file is configured correctly
 
     - name: Create Release
       id: create_release
