@@ -20,9 +20,8 @@ To install and run the Photo Backup App on your device, follow these steps:
 
 1. **Clone the Repository**
 ```
-git clone [repository-url]
+git clone https://github.com/kchaitanya863/ArchiveAngel/
 ```
-Replace `[repository-url]` with the actual URL of the repository.
 
 2. **Open the Project in Xcode**
 - Open Xcode and select `Open a project or file`.
