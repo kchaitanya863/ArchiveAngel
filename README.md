@@ -1,7 +1,7 @@
 # Archive Angel App
 
 ## Overview
-Photo Backup App is a SwiftUI application designed for iOS, enabling users to back up their photos from the Photos app to a selected folder. It supports backing up photos stored locally on the device as well as those stored in iCloud.
+Archive Angel App is a SwiftUI application designed for iOS, enabling users to back up their photos from the Photos app to a selected folder. It supports backing up photos stored locally on the device as well as those stored in iCloud.
 
 ## Features
 - **Photo Backup**: Users can back up their entire photo library.
@@ -44,8 +44,6 @@ Contributions to the Photo Backup App are welcome. If you have a suggestion that
 ## Acknowledgements
 - SwiftUI
 - Photos Framework
-
-- Other libraries or resources you used
 
 ## Screenshots
 ![simulator_screenshot_4F09D84F-EECE-4613-BC59-090D1FD23968](https://github.com/kchaitanya863/ArchiveAngel/assets/5352448/3aa4eab6-deec-426e-85ef-9ce60d57b88c)
