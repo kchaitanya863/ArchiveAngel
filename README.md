@@ -2,9 +2,13 @@
 
 ## Overview
 Archive Angel App is a SwiftUI application designed for iOS, enabling users to back up their photos from the Photos app to a selected folder. It supports backing up photos stored locally on the device as well as those stored in iCloud.
+Feature to delete duplicate photos (probably received multiple times via AirDrop)
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/archiveangel)
 
 ## Features
 - **Photo Backup**: Users can back up their entire photo library.
+- **Photo Deduplication**: Users can delete duplicate photos and videos on their gallary.
 - **iCloud Support**: The app supports photos stored in iCloud, downloading them as needed.
 - **Progress Tracking**: Displays backup progress and currently processing photo.
 - **Cancellable Operation**: Users can cancel the backup process at any point.
@@ -45,8 +49,9 @@ Contributions to the Photo Backup App are welcome. If you have a suggestion that
 - Photos Framework
 
 ## Screenshots
-![simulator_screenshot_4F09D84F-EECE-4613-BC59-090D1FD23968](https://github.com/kchaitanya863/ArchiveAngel/assets/5352448/3aa4eab6-deec-426e-85ef-9ce60d57b88c)
-![simulator_screenshot_431A1C24-8142-4177-BD4A-41AE3CCC938C](https://github.com/kchaitanya863/ArchiveAngel/assets/5352448/9f5cdecb-fcb7-4971-b89d-86668b8adac4)
-![simulator_screenshot_FB283A35-CD66-4773-894C-0DA8CEC29265](https://github.com/kchaitanya863/ArchiveAngel/assets/5352448/9611e697-4841-487e-8b46-8aee3373b601)
-![simulator_screenshot_30B649DE-204F-4BA0-8C75-37C8AB6F57E3](https://github.com/kchaitanya863/ArchiveAngel/assets/5352448/1a4f898c-546a-4e7b-aa4c-eb734b754f9c)
+![simulator_screenshot_C3CBD163-736D-49ED-8F9F-CA874D1FDBE6](https://github.com/user-attachments/assets/1ee8bb56-ed41-4c32-94d8-c764c75f86d2)
+![simulator_screenshot_EC73F66F-529A-4CEB-90BA-FB79F527C938](https://github.com/user-attachments/assets/ffa47bb6-61ef-469e-8cba-6da257ca2833)
+![simulator_screenshot_12FBBD51-1E9C-4EC8-92CD-B468A6973EA5](https://github.com/user-attachments/assets/09b19583-8294-4de1-aa17-93b84c146a66)
+![simulator_screenshot_3FD44AC9-5C35-4687-AAEB-502517CA328B](https://github.com/user-attachments/assets/e9bc0e93-fba7-465c-a96d-a67bcb1a8ab9)
+
 
