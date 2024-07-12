@@ -445,6 +445,14 @@ struct ContentView: View {
                     .padding()
                 }
 
+                Button("Buy me a coffee ☕️") {
+                    UIApplication.shared.open(URL(string: "https://buymeacoffee.com/archiveangel")!)
+                }
+                .padding()
+                .background(Color.yellow)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+                
                 if !isBackupInProgress {
                     Button("Backup Photos 💾") {
                         startBackupProcess()
