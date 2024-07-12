@@ -295,9 +295,10 @@ struct ContentView: View {
         DispatchQueue.global(qos: .userInitiated).async {
             let fetchOptions = PHFetchOptions()
             let assets = PHAsset.fetchAssets(with: fetchOptions)
+            let totalAssetsCount = assets.count
+
             var assetHashes: [String: String] = [:]
             var duplicates: [String] = []
-            let totalAssetsCount = assets.count
 
             self.isDedupInProgress = true
             self.dedupProgress = 0.0
@@ -309,9 +310,11 @@ struct ContentView: View {
             requestOptions.resizeMode = .fast
             requestOptions.isSynchronous = false
 
-            let group = DispatchGroup()
+            let batchSize = 50 // Process 50 assets at a time
 
-            for index in 0..<totalAssetsCount {
+            var currentIndex = 0
+
+            while currentIndex < totalAssetsCount {
                 if self.cancelDedup {
                     DispatchQueue.main.async {
                         self.isDedupInProgress = false
@@ -319,37 +322,47 @@ struct ContentView: View {
                     }
                     break
                 }
-                let asset = assets.object(at: index)
-                group.enter()
 
-                imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
-                    if let data = data {
-                        let hash = self.sha256(data)
-                        if let existingAssetID = assetHashes[hash] {
-                            duplicates.append(asset.localIdentifier)
-                            print("Duplicate found: \(asset.localIdentifier)")
-                        } else {
-                            assetHashes[hash] = asset.localIdentifier
+                let endIndex = min(currentIndex + batchSize, totalAssetsCount)
+                let batchAssets = Array(currentIndex..<endIndex).map { assets.object(at: $0) }
+
+                let group = DispatchGroup()
+
+                for asset in batchAssets {
+                    group.enter()
+
+                    autoreleasepool {
+                        imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
+                            if let data = data {
+                                let hash = self.sha256(data)
+                                if let existingAssetID = assetHashes[hash] {
+                                    duplicates.append(asset.localIdentifier)
+                                    print("Duplicate found: \(asset.localIdentifier)")
+                                } else {
+                                    assetHashes[hash] = asset.localIdentifier
+                                }
+                            }
+                            DispatchQueue.main.async {
+                                self.dedupProgress = Double(currentIndex + 1) / Double(totalAssetsCount)
+                                self.dedupMessage = "Processing \(currentIndex + 1) of \(totalAssetsCount)..."
+                            }
+                            group.leave()
                         }
                     }
 
-                    DispatchQueue.main.async {
-                        self.dedupProgress = Double(index + 1) / Double(totalAssetsCount)
-                        self.dedupMessage = "Processing \(index + 1) of \(totalAssetsCount)..."
-                    }
-
-                    group.leave()
+                    currentIndex += 1
                 }
+
+                group.wait() // Wait for the current batch to complete before proceeding to the next batch
             }
 
-            group.notify(queue: .global(qos: .userInitiated)) {
+            DispatchQueue.main.async {
                 guard !self.cancelDedup else {
-                    DispatchQueue.main.async {
-                        self.isDedupInProgress = false
-                        self.dedupMessage = "Deduplication canceled."
-                    }
+                    self.isDedupInProgress = false
+                    self.dedupMessage = "Deduplication canceled."
                     return
                 }
+
                 let assetsToDelete = PHAsset.fetchAssets(withLocalIdentifiers: duplicates, options: nil)
                 PHPhotoLibrary.shared().performChanges({
                     PHAssetChangeRequest.deleteAssets(assetsToDelete)
