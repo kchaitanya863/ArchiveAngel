@@ -1,0 +1,77 @@
+name: Build and Release macOS App
+
+on:
+  push:
+    branches:
+      - main  # Trigger the action on pushes to the main branch
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
+
+    - name: Install dependencies
+      run: |
+        sudo gem install cocoapods
+        pod install --project-directory=photo\ backup
+
+    - name: Set up Xcode
+      run: sudo xcode-select -s /Applications/Xcode_12.4.app/Contents/Developer
+
+    - name: Build macOS App
+      run: |
+        xcodebuild clean archive \
+          -project "photo backup.xcodeproj" \
+          -scheme "photo backup" \
+          -archivePath "$GITHUB_WORKSPACE/build/photo_backup.xcarchive" \
+          -sdk macosx
+
+    - name: Export Archive
+      run: |
+        xcodebuild -exportArchive \
+          -archivePath "$GITHUB_WORKSPACE/build/photo_backup.xcarchive" \
+          -exportOptionsPlist photo\ backup/exportOptions.plist \
+          -exportPath "$GITHUB_WORKSPACE/build/"
+
+    - name: Upload macOS App
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: $GITHUB_WORKSPACE/build/photo_backup.app
+        asset_name: photo_backup.app
+        asset_content_type: application/zip
+
+  release:
+    runs-on: macos-latest
+    needs: build
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload macOS App
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: $GITHUB_WORKSPACE/build/photo_backup.app
+        asset_name: photo_backup.app
+        asset_content_type: application/zip
