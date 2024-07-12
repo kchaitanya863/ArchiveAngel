@@ -1,7 +1,7 @@
 # Archive Angel App
 
 ## Overview
-Archive Angel App is a SwiftUI application designed for iOS, enabling users to back up their photos from the Photos app to a selected folder. It supports backing up photos stored locally on the device as well as those stored in iCloud.
+Archive Angel App is a SwiftUI application designed for iOS, iPadOS and macOS, enabling users to back up their photos from the Photos app to a selected folder. It supports backing up photos stored locally on the device as well as those stored in iCloud.
 Feature to delete duplicate photos (probably received multiple times via AirDrop)
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/archiveangel)
@@ -49,6 +49,10 @@ Contributions to the Photo Backup App are welcome. If you have a suggestion that
 - Photos Framework
 
 ## Screenshots
+![Screenshot 2024-07-12 at 2 02 53 PM](https://github.com/user-attachments/assets/9f26eeb4-23c9-4a0f-b9a8-c97b71109daa)
+![Screenshot 2024-07-12 at 2 01 36 PM](https://github.com/user-attachments/assets/5f54796c-6c78-4280-af2c-00b31f282470)
+
+
 ![simulator_screenshot_C3CBD163-736D-49ED-8F9F-CA874D1FDBE6](https://github.com/user-attachments/assets/1ee8bb56-ed41-4c32-94d8-c764c75f86d2)
 ![simulator_screenshot_EC73F66F-529A-4CEB-90BA-FB79F527C938](https://github.com/user-attachments/assets/ffa47bb6-61ef-469e-8cba-6da257ca2833)
 ![simulator_screenshot_12FBBD51-1E9C-4EC8-92CD-B468A6973EA5](https://github.com/user-attachments/assets/09b19583-8294-4de1-aa17-93b84c146a66)
