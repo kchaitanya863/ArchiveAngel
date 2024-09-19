@@ -1,7 +1,5 @@
-import Photos
 import SwiftUI
-import UniformTypeIdentifiers
-import CommonCrypto
+import Photos
 
 struct ContentView: View {
     @State private var backupFolderURL: URL?
@@ -32,6 +30,9 @@ struct ContentView: View {
     @State private var dedupProgress: Double = 0.0
     @State private var dedupMessage: String = ""
     @State private var cancelDedup = false
+
+    private let backupManager = BackupManager()
+    private let deduplicationManager = DeduplicationManager()
 
     private func fetchMediaCounts() {
         let photosOptions = PHFetchOptions()
@@ -69,324 +70,6 @@ struct ContentView: View {
                 }
             }
         }
-    }
-
-    private func showConfirmationAlert() {
-        let alert = UIAlertController(
-            title: "Clear Backup Folder",
-            message: "Are you sure you want to clear the backup folder?",
-            preferredStyle: .alert
-        )
-        alert.addAction(
-            UIAlertAction(title: "Yes", style: .default) { _ in
-                clearTargetFolder()
-            })
-        alert.addAction(UIAlertAction(title: "No", style: .cancel))
-        UIApplication.shared.windows.first?.rootViewController?.present(alert, animated: true)
-    }
-
-    private func writeImageAsset(_ asset: PHAsset, to url: URL, backupLivePhotoAsVideo: Bool = false) {
-        let imageManager = PHImageManager.default()
-        let requestOptions = PHImageRequestOptions()
-        requestOptions.isSynchronous = true
-
-        imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
-            if let data = data {
-                do {
-                    try data.write(to: url)
-                } catch {
-                    print("Error writing file: \(error)")
-                }
-            }
-        }
-
-        if backupLivePhotoAsVideo && asset.mediaSubtypes.contains(.photoLive) {
-            let options = PHLivePhotoRequestOptions()
-            options.isNetworkAccessAllowed = true
-            options.deliveryMode = .highQualityFormat
-            let liveVideoFilename = url.deletingPathExtension().appendingPathExtension("mov")
-
-            imageManager.requestLivePhoto(
-                for: asset, targetSize: CGSize(width: asset.pixelWidth, height: asset.pixelHeight),
-                contentMode: .aspectFit, options: options
-            ) { livePhoto, _ in
-                guard let livePhoto = livePhoto else { return }
-
-                let resources = PHAssetResource.assetResources(for: livePhoto)
-                if let videoResource = resources.first(where: { $0.type == .pairedVideo }) {
-                    PHAssetResourceManager.default().writeData(
-                        for: videoResource, toFile: liveVideoFilename, options: nil
-                    ) { error in
-                        if let error = error {
-                            print("Error writing Live Photo video: \(error)")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func writeVideoAsset(_ asset: PHAsset, to url: URL) {
-        let imageManager = PHImageManager.default()
-        let requestOptions = PHVideoRequestOptions()
-        requestOptions.isNetworkAccessAllowed = true
-
-        imageManager.requestAVAsset(forVideo: asset, options: requestOptions) { avAsset, _, _ in
-            if let avAsset = avAsset as? AVURLAsset {
-                do {
-                    try FileManager.default.copyItem(at: avAsset.url, to: url)
-                } catch {
-                    print("Error writing file: \(error)")
-                }
-            }
-        }
-    }
-
-    private func appendAssetMetadata(_ asset: PHAsset, to url: URL) {
-        let creationDate = asset.creationDate ?? Date()
-        let modificationDate = asset.modificationDate ?? Date()
-
-        do {
-            let attributes = [
-                FileAttributeKey.creationDate: creationDate,
-                FileAttributeKey.modificationDate: modificationDate,
-            ]
-            try FileManager.default.setAttributes(attributes, ofItemAtPath: url.path)
-        } catch {
-            print("Error setting file attributes: \(error)")
-        }
-    }
-
-    private func writeAsset(_ asset: PHAsset, to url: URL) {
-        if asset.mediaType == .image {
-            writeImageAsset(asset, to: url, backupLivePhotoAsVideo: includeLivePhotosAsVideo)
-        } else if asset.mediaType == .video {
-            writeVideoAsset(asset, to: url)
-        }
-        appendAssetMetadata(asset, to: url)
-    }
-
-    private func startBackupProcess() {
-        guard let backupFolderURL = backupFolderURL else {
-            showingAlert = true
-            completionMessage = "Backup failed: No backup folder selected."
-            return
-        }
-
-        guard backupFolderURL.startAccessingSecurityScopedResource() else {
-            print("Error: Unable to start accessing security-scoped resource.")
-            completionMessage = "Backup failed: Unable to access selected backup folder."
-            showingAlert = true
-            return
-        }
-
-        isBackupInProgress = true
-        backupProgress = 0.0
-        cancelBackup = false
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fetchOptions = PHFetchOptions()
-
-            let assets = PHAsset.fetchAssets(with: fetchOptions)
-            let assetsCount = assets.count
-            var filesWrittenCount = 0
-
-            let imageManager = PHImageManager.default()
-            let requestOptions = PHImageRequestOptions()
-            requestOptions.isSynchronous = true
-
-            assets.enumerateObjects { (asset, index, stop) in
-                if self.cancelBackup {
-                    stop.pointee = true
-                    return
-                }
-
-                if asset.mediaType == .image && !self.includePhotos {
-                    return
-                }
-
-                if asset.mediaType == .video && !self.includeVideos {
-                    return
-                }
-
-                let filename = asset.value(forKey: "filename") as? String ?? "unknown"
-                let fileURL = backupFolderURL.appendingPathComponent(
-                    asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + filename)
-
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    print("File already exists: \(fileURL.path)")
-                    return
-                }
-
-                let options = PHImageRequestOptions()
-                options.isSynchronous = true
-
-                if showThumbnail {
-                    imageManager.requestImage(
-                        for: asset,
-                        targetSize: CGSize(width: 100, height: 100),
-                        contentMode: .aspectFill,
-                        options: options
-                    ) { image, _ in
-                        if let image = image {
-                            self.currentThumbnail = image
-                        }
-                    }
-                }
-
-                self.writeAsset(asset, to: fileURL)
-
-                self.progressMessage = "Copied \(index + 1) file\(index == 1 ? "": "s")..."
-                filesWrittenCount += 1
-
-                DispatchQueue.main.async {
-                    self.backupProgress = Double(index + 1) / Double(assetsCount) * 100.0
-                }
-            }
-
-            DispatchQueue.main.async {
-                self.isBackupInProgress = false
-                self.currentThumbnail = nil
-                self.progressMessage = ""
-                backupFolderURL.stopAccessingSecurityScopedResource()
-
-                if self.cancelBackup {
-                    self.completionMessage = "Backup canceled."
-                    self.cancelBackup = false
-                } else {
-                    let totalFiles =
-                        (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
-                    self.completionMessage =
-                        "Copying complete. Files written: \(filesWrittenCount), Total files in folder: \(totalFiles)"
-                }
-            }
-        }
-    }
-
-    private func clearTargetFolder() {
-        guard let backupFolderURL = backupFolderURL else {
-            showingAlert = true
-            completionMessage = "Backup failed: No backup folder selected."
-            return
-        }
-
-        guard backupFolderURL.startAccessingSecurityScopedResource() else {
-            print("Error: Unable to start accessing security-scoped resource.")
-            completionMessage = "Backup failed: Unable to access selected backup folder."
-            showingAlert = true
-            return
-        }
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                try FileManager.default.removeItem(at: backupFolderURL)
-                try FileManager.default.createDirectory(
-                    at: backupFolderURL,
-                    withIntermediateDirectories: true,
-                    attributes: nil
-                )
-            } catch {
-                print("Error deleting folder: \(error)")
-            }
-        }
-    }
-
-    private func deleteDuplicatePhotos() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            let fetchOptions = PHFetchOptions()
-            let assets = PHAsset.fetchAssets(with: fetchOptions)
-            let totalAssetsCount = assets.count
-
-            var assetHashes: [String: String] = [:]
-            var duplicates: [String] = []
-
-            self.isDedupInProgress = true
-            self.dedupProgress = 0.0
-            self.cancelDedup = false
-
-            let imageManager = PHImageManager.default()
-            let requestOptions = PHImageRequestOptions()
-            requestOptions.deliveryMode = .fastFormat
-            requestOptions.resizeMode = .fast
-            requestOptions.isSynchronous = false
-
-            let batchSize = 50 // Process 50 assets at a time
-
-            var currentIndex = 0
-
-            while currentIndex < totalAssetsCount {
-                if self.cancelDedup {
-                    DispatchQueue.main.async {
-                        self.isDedupInProgress = false
-                        self.dedupMessage = "Deduplication canceled."
-                    }
-                    break
-                }
-
-                let endIndex = min(currentIndex + batchSize, totalAssetsCount)
-                let batchAssets = Array(currentIndex..<endIndex).map { assets.object(at: $0) }
-
-                let group = DispatchGroup()
-
-                for asset in batchAssets {
-                    group.enter()
-
-                    autoreleasepool {
-                        imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
-                            if let data = data {
-                                let hash = self.sha256(data)
-                                if let existingAssetID = assetHashes[hash] {
-                                    duplicates.append(asset.localIdentifier)
-                                    print("Duplicate found: \(asset.localIdentifier)")
-                                } else {
-                                    assetHashes[hash] = asset.localIdentifier
-                                }
-                            }
-                            DispatchQueue.main.async {
-                                self.dedupProgress = Double(currentIndex + 1) / Double(totalAssetsCount)
-                                self.dedupMessage = "Processing \(currentIndex + 1) of \(totalAssetsCount)..."
-                            }
-                            group.leave()
-                        }
-                    }
-
-                    currentIndex += 1
-                }
-
-                group.wait() // Wait for the current batch to complete before proceeding to the next batch
-            }
-
-            DispatchQueue.main.async {
-                guard !self.cancelDedup else {
-                    self.isDedupInProgress = false
-                    self.dedupMessage = "Deduplication canceled."
-                    return
-                }
-
-                let assetsToDelete = PHAsset.fetchAssets(withLocalIdentifiers: duplicates, options: nil)
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.deleteAssets(assetsToDelete)
-                }, completionHandler: { success, error in
-                    if success {
-                        print("Deleted duplicates successfully")
-                        self.fetchMediaCounts()
-                    } else if let error = error {
-                        print("Error deleting duplicates: \(error)")
-                    }
-                    DispatchQueue.main.async {
-                        self.isDedupInProgress = false
-                    }
-                })
-            }
-        }
-    }
-
-    private func sha256(_ data: Data) -> String {
-        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-        data.withUnsafeBytes {
-            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
-        }
-        return hash.map { String(format: "%02x", $0) }.joined()
     }
 
     var body: some View {
@@ -468,7 +151,20 @@ struct ContentView: View {
                 
                 if !isBackupInProgress {
                     Button("Backup Photos 💾") {
-                        startBackupProcess()
+                        backupManager.startBackupProcess(
+                            backupFolderURL: backupFolderURL,
+                            includePhotos: includePhotos,
+                            includeVideos: includeVideos,
+                            includeLivePhotosAsVideo: includeLivePhotosAsVideo,
+                            showThumbnail: showThumbnail,
+                            isBackupInProgress: $isBackupInProgress,
+                            backupProgress: $backupProgress,
+                            cancelBackup: $cancelBackup,
+                            currentThumbnail: $currentThumbnail,
+                            progressMessage: $progressMessage,
+                            completionMessage: $completionMessage,
+                            showingAlert: $showingAlert
+                        )
                     }
                     .padding()
                     .background(Color.blue)
@@ -532,7 +228,11 @@ struct ContentView: View {
 
                 if !isBackupInProgress {
                     Button("Clear Destination Folder ⚠️") {
-                        showConfirmationAlert()
+                        backupManager.showConfirmationAlert(
+                            backupFolderURL: backupFolderURL,
+                            showingAlert: $showingAlert,
+                            completionMessage: $completionMessage
+                        )
                     }
                     .padding()
                     .background(Color.red)
@@ -542,7 +242,13 @@ struct ContentView: View {
 
                 if !isDedupInProgress {
                     Button("Delete Duplicate Photos 📸") {
-                        deleteDuplicatePhotos()
+                        deduplicationManager.deleteDuplicatePhotos(
+                            isDedupInProgress: $isDedupInProgress,
+                            dedupProgress: $dedupProgress,
+                            dedupMessage: $dedupMessage,
+                            cancelDedup: $cancelDedup,
+                            fetchMediaCounts: fetchMediaCounts
+                        )
                     }
                     .padding()
                     .background(Color.green)

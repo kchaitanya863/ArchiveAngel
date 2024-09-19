@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4F7BAFB22C9C9E10000D16C9 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7BAFB12C9C9E10000D16C9 /* BackupManager.swift */; };
+		4F7BAFB42C9C9E31000D16C9 /* DeduplicationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7BAFB32C9C9E31000D16C9 /* DeduplicationManager.swift */; };
 		6B50B9852B0302CC00AE2376 /* photo_backupApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9842B0302CC00AE2376 /* photo_backupApp.swift */; };
 		6B50B9872B0302CC00AE2376 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9862B0302CC00AE2376 /* ContentView.swift */; };
 		6B50B9892B0302CE00AE2376 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6B50B9882B0302CE00AE2376 /* Assets.xcassets */; };
@@ -36,6 +38,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4F7BAFB12C9C9E10000D16C9 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
+		4F7BAFB32C9C9E31000D16C9 /* DeduplicationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeduplicationManager.swift; sourceTree = "<group>"; };
 		6B50B9812B0302CC00AE2376 /* Archive Angel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Archive Angel.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B50B9842B0302CC00AE2376 /* photo_backupApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupApp.swift; sourceTree = "<group>"; };
 		6B50B9862B0302CC00AE2376 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -106,6 +110,8 @@
 				6B50B9882B0302CE00AE2376 /* Assets.xcassets */,
 				6B50B98A2B0302CE00AE2376 /* Preview Content */,
 				6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */,
+				4F7BAFB12C9C9E10000D16C9 /* BackupManager.swift */,
+				4F7BAFB32C9C9E31000D16C9 /* DeduplicationManager.swift */,
 			);
 			path = "photo backup";
 			sourceTree = "<group>";
@@ -266,9 +272,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4F7BAFB42C9C9E31000D16C9 /* DeduplicationManager.swift in Sources */,
 				6B50B9872B0302CC00AE2376 /* ContentView.swift in Sources */,
 				6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */,
 				6B50B9852B0302CC00AE2376 /* photo_backupApp.swift in Sources */,
+				4F7BAFB22C9C9E10000D16C9 /* BackupManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
