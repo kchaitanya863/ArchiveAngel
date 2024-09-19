@@ -36,7 +36,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		6B50B9812B0302CC00AE2376 /* photo backup.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "photo backup.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B50B9812B0302CC00AE2376 /* Archive Angel.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Archive Angel.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B50B9842B0302CC00AE2376 /* photo_backupApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupApp.swift; sourceTree = "<group>"; };
 		6B50B9862B0302CC00AE2376 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		6B50B9882B0302CE00AE2376 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -89,7 +89,7 @@
 		6B50B9822B0302CC00AE2376 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				6B50B9812B0302CC00AE2376 /* photo backup.app */,
+				6B50B9812B0302CC00AE2376 /* Archive Angel.app */,
 				6B50B9912B0302CE00AE2376 /* photo backupTests.xctest */,
 				6B50B99B2B0302CE00AE2376 /* photo backupUITests.xctest */,
 			);
@@ -138,9 +138,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		6B50B9802B0302CB00AE2376 /* photo backup */ = {
+		6B50B9802B0302CB00AE2376 /* Archive Angel */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 6B50B9A52B0302CE00AE2376 /* Build configuration list for PBXNativeTarget "photo backup" */;
+			buildConfigurationList = 6B50B9A52B0302CE00AE2376 /* Build configuration list for PBXNativeTarget "Archive Angel" */;
 			buildPhases = (
 				6B50B97D2B0302CB00AE2376 /* Sources */,
 				6B50B97E2B0302CB00AE2376 /* Frameworks */,
@@ -150,9 +150,9 @@
 			);
 			dependencies = (
 			);
-			name = "photo backup";
+			name = "Archive Angel";
 			productName = "photo backup";
-			productReference = 6B50B9812B0302CC00AE2376 /* photo backup.app */;
+			productReference = 6B50B9812B0302CC00AE2376 /* Archive Angel.app */;
 			productType = "com.apple.product-type.application";
 		};
 		6B50B9902B0302CE00AE2376 /* photo backupTests */ = {
@@ -214,7 +214,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 6B50B97C2B0302CB00AE2376 /* Build configuration list for PBXProject "photo backup" */;
+			buildConfigurationList = 6B50B97C2B0302CB00AE2376 /* Build configuration list for PBXProject "ArchiveAngel" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -227,7 +227,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				6B50B9802B0302CB00AE2376 /* photo backup */,
+				6B50B9802B0302CB00AE2376 /* Archive Angel */,
 				6B50B9902B0302CE00AE2376 /* photo backupTests */,
 				6B50B99A2B0302CE00AE2376 /* photo backupUITests */,
 			);
@@ -294,12 +294,12 @@
 /* Begin PBXTargetDependency section */
 		6B50B9932B0302CE00AE2376 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6B50B9802B0302CB00AE2376 /* photo backup */;
+			target = 6B50B9802B0302CB00AE2376 /* Archive Angel */;
 			targetProxy = 6B50B9922B0302CE00AE2376 /* PBXContainerItemProxy */;
 		};
 		6B50B99D2B0302CE00AE2376 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 6B50B9802B0302CB00AE2376 /* photo backup */;
+			target = 6B50B9802B0302CB00AE2376 /* Archive Angel */;
 			targetProxy = 6B50B99C2B0302CE00AE2376 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -451,7 +451,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.krishna.photo-backup";
+				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -486,7 +486,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.krishna.photo-backup";
+				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -573,7 +573,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		6B50B97C2B0302CB00AE2376 /* Build configuration list for PBXProject "photo backup" */ = {
+		6B50B97C2B0302CB00AE2376 /* Build configuration list for PBXProject "ArchiveAngel" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6B50B9A32B0302CE00AE2376 /* Debug */,
@@ -582,7 +582,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		6B50B9A52B0302CE00AE2376 /* Build configuration list for PBXNativeTarget "photo backup" */ = {
+		6B50B9A52B0302CE00AE2376 /* Build configuration list for PBXNativeTarget "Archive Angel" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6B50B9A62B0302CE00AE2376 /* Debug */,
