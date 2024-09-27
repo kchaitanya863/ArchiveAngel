@@ -141,12 +141,12 @@ struct ContentView: View {
                     .padding()
                 }
 
-                Button("Buy me a coffee ☕️") {
-                    UIApplication.shared.open(URL(string: "https://buymeacoffee.com/archiveangel")!)
+                Button("Star this project on GitHub 💻") {
+                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
                 }
                 .padding()
-                .background(Color.yellow)
-                .foregroundColor(.white)
+                .background(Color.white)
+                .foregroundColor(.black)
                 .cornerRadius(8)
                 
                 if !isBackupInProgress {
