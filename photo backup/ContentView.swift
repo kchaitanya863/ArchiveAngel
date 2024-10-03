@@ -141,13 +141,13 @@ struct ContentView: View {
                     .padding()
                 }
 
-                Button("Star this project on GitHub 💻") {
-                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
-                }
-                .padding()
-                .background(Color.white)
-                .foregroundColor(.black)
-                .cornerRadius(8)
+//                Button("Star this project on GitHub 💻") {
+//                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
+//                }
+//                .padding()
+//                .background(Color.white)
+//                .foregroundColor(.black)
+//                .cornerRadius(8)
                 
                 if !isBackupInProgress {
                     Button("Backup Photos 💾") {
