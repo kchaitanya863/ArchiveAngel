@@ -96,17 +96,23 @@ struct ContentView: View {
                 Text("Photos: \(totalPhotosCount), Videos: \(totalVideosCount)")
                     .onAppear(perform: fetchMediaCounts)
 
-                Text(
-                    "Missing Photos: \(totalMissingPhotosCount), Missing Videos: \(totalMissingVideosCount)"
-                )
-                .onAppear(perform: {
-                    if let backupFolderURL = backupFolderURL {
-                        calculateMissingMediaCounts(url: backupFolderURL)
-                    }
-                })
-                .onTapGesture {
-                    if let backupFolderURL = backupFolderURL {
-                        calculateMissingMediaCounts(url: backupFolderURL)
+                HStack {
+                    Text(
+                        "Missing Photos: \(totalMissingPhotosCount), Missing Videos: \(totalMissingVideosCount)"
+                    )
+                    .onAppear(perform: {
+                        if let backupFolderURL = backupFolderURL {
+                            calculateMissingMediaCounts(url: backupFolderURL)
+                        }
+                    })
+                    
+                    Button(action: {
+                        if let backupFolderURL = backupFolderURL {
+                            calculateMissingMediaCounts(url: backupFolderURL)
+                        }
+                    }) {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.blue)
                     }
                 }
                 .padding()
