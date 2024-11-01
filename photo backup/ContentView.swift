@@ -31,8 +31,17 @@ struct ContentView: View {
     @State private var dedupMessage: String = ""
     @State private var cancelDedup = false
 
+    @State private var totalBackupSize: Int64 = 0
+    @State private var lastBackupDate: Date?
+
     private let backupManager = BackupManager()
     private let deduplicationManager = DeduplicationManager()
+
+    init() {
+        // Load saved values
+        _totalBackupSize = State(initialValue: Int64(UserDefaults.standard.integer(forKey: "totalBackupSize")))
+        _lastBackupDate = State(initialValue: UserDefaults.standard.object(forKey: "lastBackupDate") as? Date)
+    }
 
     private func fetchMediaCounts() {
         let photosOptions = PHFetchOptions()
@@ -70,6 +79,11 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private func saveBackupInfo() {
+        UserDefaults.standard.set(totalBackupSize, forKey: "totalBackupSize")
+        UserDefaults.standard.set(lastBackupDate, forKey: "lastBackupDate")
     }
 
     var body: some View {
@@ -147,6 +161,12 @@ struct ContentView: View {
                     .padding()
                 }
 
+                if let date = lastBackupDate {
+                    Text("Last Backup: \(date, style: .date)")
+                }
+                Text("Total Backup Size: \(ByteCountFormatter.string(fromByteCount: totalBackupSize, countStyle: .file))")
+                .padding()
+
 //                Button("Star this project on GitHub 💻") {
 //                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
 //                }
@@ -169,7 +189,9 @@ struct ContentView: View {
                             currentThumbnail: $currentThumbnail,
                             progressMessage: $progressMessage,
                             completionMessage: $completionMessage,
-                            showingAlert: $showingAlert
+                            showingAlert: $showingAlert,
+                            totalBackupSize: $totalBackupSize,
+                            lastBackupDate: $lastBackupDate
                         )
                     }
                     .padding()
@@ -278,6 +300,15 @@ struct ContentView: View {
                 }
 
                 Spacer()
+            }
+        }
+        .onAppear {
+            NotificationCenter.default.addObserver(
+                forName: NSNotification.Name("SaveBackupInfo"),
+                object: nil,
+                queue: .main
+            ) { _ in
+                saveBackupInfo()
             }
         }
     }

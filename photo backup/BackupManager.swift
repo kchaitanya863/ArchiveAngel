@@ -15,7 +15,9 @@ class BackupManager {
         currentThumbnail: Binding<UIImage?>,
         progressMessage: Binding<String>,
         completionMessage: Binding<String>,
-        showingAlert: Binding<Bool>
+        showingAlert: Binding<Bool>,
+        totalBackupSize: Binding<Int64>,
+        lastBackupDate: Binding<Date?>
     ) {
         guard let backupFolderURL = backupFolderURL else {
             showingAlert.wrappedValue = true
@@ -33,6 +35,7 @@ class BackupManager {
         isBackupInProgress.wrappedValue = true
         backupProgress.wrappedValue = 0.0
         cancelBackup.wrappedValue = false
+        var currentTotalSize: Int64 = 0
 
         DispatchQueue.global(qos: .userInitiated).async {
             let fetchOptions = PHFetchOptions()
@@ -64,7 +67,10 @@ class BackupManager {
                     asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + filename)
 
                 if FileManager.default.fileExists(atPath: fileURL.path) {
-                    print("File already exists: \(fileURL.path)")
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                       let size = attributes[.size] as? Int64 {
+                        currentTotalSize += size
+                    }
                     return
                 }
 
@@ -86,6 +92,14 @@ class BackupManager {
 
                 self.writeAsset(asset, to: fileURL, includeLivePhotosAsVideo: includeLivePhotosAsVideo)
 
+                if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                   let size = attributes[.size] as? Int64 {
+                    currentTotalSize += size
+                    DispatchQueue.main.async {
+                        totalBackupSize.wrappedValue = currentTotalSize
+                    }
+                }
+
                 progressMessage.wrappedValue = "Copied \(index + 1) file\(index == 1 ? "": "s")..."
                 filesWrittenCount += 1
 
@@ -100,6 +114,9 @@ class BackupManager {
                 progressMessage.wrappedValue = ""
                 backupFolderURL.stopAccessingSecurityScopedResource()
 
+                totalBackupSize.wrappedValue = currentTotalSize
+                lastBackupDate.wrappedValue = Date()
+
                 if cancelBackup.wrappedValue {
                     completionMessage.wrappedValue = "Backup canceled."
                     cancelBackup.wrappedValue = false
@@ -109,6 +126,8 @@ class BackupManager {
                     completionMessage.wrappedValue =
                         "Copying complete. Files written: \(filesWrittenCount), Total files in folder: \(totalFiles)"
                 }
+
+                NotificationCenter.default.post(name: NSNotification.Name("SaveBackupInfo"), object: nil)
             }
         }
     }
