@@ -131,35 +131,13 @@ struct ContentView: View {
                 }
                 .padding()
 
-                VStack {
-                    HStack {
-                        Text("Include Photos")
-                        Spacer()
-                        Toggle("", isOn: $includePhotos)
-                    }
-                    .padding()
-
-                    HStack {
-                        Text("Include Videos")
-                        Spacer()
-                        Toggle("", isOn: $includeVideos)
-                    }
-                    .padding()
-
-                    HStack {
-                        Text("Include Live Photos as Video")
-                        Spacer()
-                        Toggle("", isOn: $includeLivePhotosAsVideo)
-                    }
-                    .padding()
-
-                    HStack {
-                        Text("Show Thumbnail when Copying")
-                        Spacer()
-                        Toggle("", isOn: $showThumbnail)
-                    }
-                    .padding()
+                GroupBox("Backup Settings") {
+                    Toggle("Include Photos", isOn: $includePhotos)
+                    Toggle("Include Videos", isOn: $includeVideos)
+                    Toggle("Include Live Photos as Video", isOn: $includeLivePhotosAsVideo)
+                    Toggle("Show Thumbnail when Copying", isOn: $showThumbnail)
                 }
+                .padding()
 
                 if let date = lastBackupDate {
                     Text("Last Backup: \(date, style: .date)")
