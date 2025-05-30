@@ -37,6 +37,8 @@ struct ContentView: View {
     private let backupManager = BackupManager()
     private let deduplicationManager = DeduplicationManager()
 
+    @Environment(\.scenePhase) private var scenePhase
+
     init() {
         // Load saved values
         _totalBackupSize = State(initialValue: Int64(UserDefaults.standard.integer(forKey: "totalBackupSize")))
@@ -287,6 +289,13 @@ struct ContentView: View {
                 queue: .main
             ) { _ in
                 saveBackupInfo()
+            }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                if let backupFolderURL = backupFolderURL {
+                    calculateMissingMediaCounts(url: backupFolderURL)
+                }
             }
         }
     }
