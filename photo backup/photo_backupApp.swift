@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct photo_backupApp: App {
+    @StateObject private var viewModel = ArchiveAngelViewModel()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(viewModel)
         }
     }
 }

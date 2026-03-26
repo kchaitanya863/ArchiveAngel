@@ -1,107 +1,119 @@
+import Foundation
 import Photos
-import SwiftUI
-import CommonCrypto
 
-class DeduplicationManager {
-    func deleteDuplicatePhotos(
-        isDedupInProgress: Binding<Bool>,
-        dedupProgress: Binding<Double>,
-        dedupMessage: Binding<String>,
-        cancelDedup: Binding<Bool>,
-        fetchMediaCounts: @escaping () -> Void
+/// Photo-only deduplication using SHA-256 of full image data. Videos are skipped.
+final class DeduplicationManager {
+
+    func scanDuplicatePhotos(
+        isCanceled: @escaping () -> Bool,
+        onProgress: @escaping (_ processed: Int, _ total: Int, _ message: String) -> Void,
+        completion: @escaping (Result<[String], Error>) -> Void
     ) {
         DispatchQueue.global(qos: .userInitiated).async {
             let fetchOptions = PHFetchOptions()
+            fetchOptions.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
             let assets = PHAsset.fetchAssets(with: fetchOptions)
-            let totalAssetsCount = assets.count
+            let total = assets.count
 
             var assetHashes: [String: String] = [:]
             var duplicates: [String] = []
-
-            isDedupInProgress.wrappedValue = true
-            dedupProgress.wrappedValue = 0.0
-            cancelDedup.wrappedValue = false
+            let progressQueue = DispatchQueue(label: "com.archiveangel.dedup.progress")
+            var completed = 0
 
             let imageManager = PHImageManager.default()
             let requestOptions = PHImageRequestOptions()
-            requestOptions.deliveryMode = .fastFormat
-            requestOptions.resizeMode = .fast
+            requestOptions.deliveryMode = .highQualityFormat
+            requestOptions.isNetworkAccessAllowed = true
             requestOptions.isSynchronous = false
 
-            let batchSize = 50 // Process 50 assets at a time
+            let batchSize = 32
+            var index = 0
 
-            var currentIndex = 0
-
-            while currentIndex < totalAssetsCount {
-                if cancelDedup.wrappedValue {
+            while index < total {
+                if isCanceled() {
                     DispatchQueue.main.async {
-                        isDedupInProgress.wrappedValue = false
-                        dedupMessage.wrappedValue = "Deduplication canceled."
+                        completion(.failure(CancellationError()))
                     }
-                    break
+                    return
                 }
 
-                let endIndex = min(currentIndex + batchSize, totalAssetsCount)
-                let batchAssets = Array(currentIndex..<endIndex).map { assets.object(at: $0) }
-
+                let end = min(index + batchSize, total)
                 let group = DispatchGroup()
 
-                for asset in batchAssets {
+                for i in index..<end {
+                    if isCanceled() { break }
+                    let asset = assets.object(at: i)
                     group.enter()
-
-                    imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
+                    imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) {
+                        data,
+                        _,
+                        _,
+                        _ in
+                        defer { group.leave() }
                         if let data = data {
-                            let hash = self.sha256(data)
-                            if assetHashes[hash] != nil {
+                            let hash = CryptoHelpers.sha256Hex(data)
+                            if let _ = assetHashes[hash] {
                                 duplicates.append(asset.localIdentifier)
-                                print("Duplicate found: \(asset.localIdentifier)")
                             } else {
                                 assetHashes[hash] = asset.localIdentifier
                             }
                         }
-                        DispatchQueue.main.async {
-                            dedupProgress.wrappedValue = Double(currentIndex + 1) / Double(totalAssetsCount)
-                            dedupMessage.wrappedValue = "Processing \(currentIndex + 1) of \(totalAssetsCount)..."
+                        progressQueue.sync {
+                            completed += 1
+                            let c = completed
+                            DispatchQueue.main.async {
+                                onProgress(c, total, "Scanning \(c) of \(total) photos…")
+                            }
                         }
-                        group.leave()
                     }
-
-                    currentIndex += 1
                 }
 
-                group.wait() // Wait for the current batch to complete before proceeding to the next batch
+                group.wait()
+                index = end
+            }
+
+            if isCanceled() {
+                DispatchQueue.main.async {
+                    completion(.failure(CancellationError()))
+                }
+                return
             }
 
             DispatchQueue.main.async {
-                guard !cancelDedup.wrappedValue else {
-                    isDedupInProgress.wrappedValue = false
-                    dedupMessage.wrappedValue = "Deduplication canceled."
-                    return
-                }
-
-                let assetsToDelete = PHAsset.fetchAssets(withLocalIdentifiers: duplicates, options: nil)
-                PHPhotoLibrary.shared().performChanges({
-                    PHAssetChangeRequest.deleteAssets(assetsToDelete)
-                }, completionHandler: { success, error in
-                    if success {
-                        print("Deleted duplicates successfully")
-                        fetchMediaCounts()
-                    } else if let error = error {
-                        print("Error deleting duplicates: \(error)")
-                    }
-                    DispatchQueue.main.async {
-                        isDedupInProgress.wrappedValue = false
-                    }
-                })
+                completion(.success(duplicates))
             }
         }
     }
 
-    private func sha256(_ data: Data) -> String {
-        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-        data.withUnsafeBytes {
-            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
+    func deleteAssets(
+        localIdentifiers: [String],
+        completion: @escaping (Result<Int, Error>) -> Void
+    ) {
+        guard !localIdentifiers.isEmpty else {
+            completion(.success(0))
+            return
         }
-        return hash.map { String(format: "%02x", $0) }.joined()
+        let toDelete = PHAsset.fetchAssets(withLocalIdentifiers: localIdentifiers, options: nil)
+        PHPhotoLibrary.shared().performChanges({
+            PHAssetChangeRequest.deleteAssets(toDelete)
+        }, completionHandler: { success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    completion(.failure(error))
+                } else if success {
+                    completion(.success(localIdentifiers.count))
+                } else {
+                    completion(
+                        .failure(
+                            NSError(
+                                domain: "ArchiveAngel",
+                                code: -1,
+                                userInfo: [NSLocalizedDescriptionKey: "Photo library change failed."]
+                            )
+                        )
+                    )
+                }
+            }
+        })
     }
 }

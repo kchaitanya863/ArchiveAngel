@@ -4,6 +4,8 @@
 <dict>
 	<key>NSExtensionFileProviderOnlyVisibleInParentApplication</key>
 	<false/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Archive Angel reads your photo library to export copies to a folder you choose and to find duplicate images when you ask.</string>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 </dict>

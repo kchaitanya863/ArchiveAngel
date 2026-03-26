@@ -1,308 +1,245 @@
-import SwiftUI
 import Photos
+import SwiftUI
 
 struct ContentView: View {
-    @State private var backupFolderURL: URL?
-    @State private var showDocumentPicker = false
-
-    @State private var isBackupInProgress = false
-    @State private var backupProgress: Double = 0.0
-
-    @State private var showingAlert = false
-    @State private var completionMessage: String = ""
-    @State private var progressMessage: String = ""
-    @State private var currentThumbnail: UIImage?
+    @EnvironmentObject private var viewModel: ArchiveAngelViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var includePhotos = true
     @State private var includeVideos = true
     @State private var includeLivePhotosAsVideo = true
-
-    @State private var totalPhotosCount = 0
-    @State private var totalVideosCount = 0
-
-    @State private var totalMissingPhotosCount = 0
-    @State private var totalMissingVideosCount = 0
-
-    @State private var showThumbnail = false
-
-    @State private var cancelBackup = false
-    @State private var isDedupInProgress = false
-    @State private var dedupProgress: Double = 0.0
-    @State private var dedupMessage: String = ""
-    @State private var cancelDedup = false
-
-    @State private var totalBackupSize: Int64 = 0
-    @State private var lastBackupDate: Date?
-
-    private let backupManager = BackupManager()
-    private let deduplicationManager = DeduplicationManager()
-
-    @Environment(\.scenePhase) private var scenePhase
-
-    init() {
-        // Load saved values
-        _totalBackupSize = State(initialValue: Int64(UserDefaults.standard.integer(forKey: "totalBackupSize")))
-        _lastBackupDate = State(initialValue: UserDefaults.standard.object(forKey: "lastBackupDate") as? Date)
-    }
-
-    private func fetchMediaCounts() {
-        let photosOptions = PHFetchOptions()
-        photosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
-        totalPhotosCount = PHAsset.fetchAssets(with: photosOptions).count
-
-        let videosOptions = PHFetchOptions()
-        videosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-        totalVideosCount = PHAsset.fetchAssets(with: videosOptions).count
-    }
-
-    private func calculateMissingMediaCounts(url: URL) {
-        totalMissingPhotosCount = 0
-        totalMissingVideosCount = 0
-        let fetchOptions = PHFetchOptions()
-        let assets = PHAsset.fetchAssets(with: fetchOptions)
-        assets.enumerateObjects { (asset, index, stop) in
-            if asset.mediaType == .image && !includePhotos {
-                return
-            }
-
-            if asset.mediaType == .video && !includeVideos {
-                return
-            }
-
-            let filename = asset.value(forKey: "filename") as? String ?? "unknown"
-            let fileURL = url.appendingPathComponent(
-                asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + filename)
-
-            if !FileManager.default.fileExists(atPath: fileURL.path) {
-                if asset.mediaType == .image {
-                    totalMissingPhotosCount += 1
-                } else if asset.mediaType == .video {
-                    totalMissingVideosCount += 1
-                }
-            }
-        }
-    }
-
-    private func saveBackupInfo() {
-        UserDefaults.standard.set(totalBackupSize, forKey: "totalBackupSize")
-        UserDefaults.standard.set(lastBackupDate, forKey: "lastBackupDate")
-    }
+    @State private var showThumbnail = true
 
     var body: some View {
         ScrollView {
-            VStack {
-                Spacer()
-
+            VStack(spacing: 16) {
                 Image("AppHomeIcon")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 200, height: 200)
+                    .accessibilityHidden(true)
 
-                if !isBackupInProgress {
-                    Button("Select Backup Folder") {
-                        showDocumentPicker = true
+                if !viewModel.isBackupInProgress {
+                    Button("Select backup folder") {
+                        viewModel.showDocumentPicker = true
                     }
-                    .sheet(isPresented: $showDocumentPicker) {
+                    .accessibilityHint("Choose where exported photos and videos are saved.")
+                    .sheet(isPresented: $viewModel.showDocumentPicker) {
                         DocumentPicker { url in
-                            backupFolderURL = url
+                            viewModel.userPickedBackupFolder(url)
                         }
                     }
                 }
 
-                Text("Photos: \(totalPhotosCount), Videos: \(totalVideosCount)")
-                    .onAppear(perform: fetchMediaCounts)
+                Text("Photos: \(viewModel.totalPhotosCount), videos: \(viewModel.totalVideosCount)")
+                    .font(.subheadline)
+                    .accessibilityElement(children: .combine)
 
-                HStack {
+                HStack(alignment: .center) {
                     Text(
-                        "Missing Photos: \(totalMissingPhotosCount), Missing Videos: \(totalMissingVideosCount)"
+                        "Missing — photos: \(viewModel.totalMissingPhotosCount), videos: \(viewModel.totalMissingVideosCount)"
                     )
-                    .onAppear(perform: {
-                        if let backupFolderURL = backupFolderURL {
-                            calculateMissingMediaCounts(url: backupFolderURL)
-                        }
-                    })
-                    
-                    Button(action: {
-                        if let backupFolderURL = backupFolderURL {
-                            calculateMissingMediaCounts(url: backupFolderURL)
-                        }
-                    }) {
+                    .font(.subheadline)
+                    .accessibilityLabel(
+                        "Missing from backup: \(viewModel.totalMissingPhotosCount) photos, \(viewModel.totalMissingVideosCount) videos"
+                    )
+                    Spacer(minLength: 8)
+                    Button {
+                        viewModel.refreshMissingCounts()
+                    } label: {
                         Image(systemName: "arrow.clockwise")
-                            .foregroundColor(.blue)
                     }
+                    .accessibilityLabel("Refresh missing counts")
                 }
-                .padding()
+                .padding(.horizontal)
 
-                GroupBox("Backup Settings") {
-                    Toggle("Include Photos", isOn: $includePhotos)
-                    Toggle("Include Videos", isOn: $includeVideos)
-                    Toggle("Include Live Photos as Video", isOn: $includeLivePhotosAsVideo)
-                    Toggle("Show Thumbnail when Copying", isOn: $showThumbnail)
+                GroupBox("Backup settings") {
+                    Toggle("Include photos", isOn: $includePhotos)
+                    Toggle("Include videos", isOn: $includeVideos)
+                    Toggle("Export Live Photos as video", isOn: $includeLivePhotosAsVideo)
+                    Toggle("Show thumbnail while copying", isOn: $showThumbnail)
                 }
-                .padding()
+                .padding(.horizontal)
 
-                if let date = lastBackupDate {
-                    Text("Last Backup: \(date, style: .date)")
+                if let date = viewModel.state.lastBackupDate {
+                    Text("Last backup: \(date, style: .date)")
+                        .font(.subheadline)
                 }
-                Text("Total Backup Size: \(ByteCountFormatter.string(fromByteCount: totalBackupSize, countStyle: .file))")
-                .padding()
+                Text(
+                    "Total backup size: \(ByteCountFormatter.string(fromByteCount: viewModel.state.totalBackupSize, countStyle: .file))"
+                )
+                .font(.subheadline)
 
-//                Button("Star this project on GitHub 💻") {
-//                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
-//                }
-//                .padding()
-//                .background(Color.white)
-//                .foregroundColor(.black)
-//                .cornerRadius(8)
-                
-                if !isBackupInProgress {
-                    Button("Backup Photos 💾") {
-                        backupManager.startBackupProcess(
-                            backupFolderURL: backupFolderURL,
-                            includePhotos: includePhotos,
-                            includeVideos: includeVideos,
-                            includeLivePhotosAsVideo: includeLivePhotosAsVideo,
-                            showThumbnail: showThumbnail,
-                            isBackupInProgress: $isBackupInProgress,
-                            backupProgress: $backupProgress,
-                            cancelBackup: $cancelBackup,
-                            currentThumbnail: $currentThumbnail,
-                            progressMessage: $progressMessage,
-                            completionMessage: $completionMessage,
-                            showingAlert: $showingAlert,
-                            totalBackupSize: $totalBackupSize,
-                            lastBackupDate: $lastBackupDate
-                        )
+                if !viewModel.isBackupInProgress {
+                    Button("Back up library") {
+                        viewModel.startBackup()
                     }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                    .alert(isPresented: $showingAlert) {
-                        Alert(
-                            title: Text("No Folder Selected"),
-                            message: Text("Please select a folder to backup your photos."),
-                            dismissButton: .default(Text("OK"))
-                        )
-                    }
-                    .alert(
-                        isPresented: Binding<Bool>(
-                            get: { !completionMessage.isEmpty },
-                            set: { _ in completionMessage = "" }
-                        )
-                    ) {
-                        Alert(
-                            title: Text("Backup Complete"), message: Text(completionMessage),
-                            dismissButton: .default(Text("OK")))
-                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityHint("Copies new items from your library into the selected folder.")
                 }
 
-                if let url = backupFolderURL {
-                    Text("Backup to: \(url.lastPathComponent)")
+                if let name = viewModel.backupFolderDisplayName {
+                    Text("Backup folder: \(name)")
                         .font(.caption)
-                        .padding()
                         .multilineTextAlignment(.center)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal)
                 }
 
-                if isBackupInProgress, let thumbnail = currentThumbnail {
+                if viewModel.isBackupInProgress, let thumbnail = viewModel.currentThumbnail {
                     Image(uiImage: thumbnail)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 100, height: 100)
                         .clipped()
                         .cornerRadius(8)
-                        .padding()
-                    Text(progressMessage)
+                        .accessibilityLabel("Current item thumbnail")
+                    Text(viewModel.progressMessage)
+                        .font(.caption)
                         .lineLimit(2)
                         .truncationMode(.tail)
-                        .padding()
+                        .padding(.horizontal)
                 }
 
-                if isBackupInProgress {
-                    ProgressView(value: backupProgress, total: 100)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding()
-                }
-
-                if isBackupInProgress {
-                    Button("Cancel Backup 🛑") {
-                        cancelBackup = true
+                if viewModel.isBackupInProgress {
+                    ProgressView(value: viewModel.backupProgress, total: 100)
+                        .progressViewStyle(.linear)
+                        .padding(.horizontal)
+                        .accessibilityLabel("Backup progress")
+                    Button("Cancel backup") {
+                        viewModel.cancelBackup()
                     }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .buttonStyle(.bordered)
+                    .tint(.red)
                 }
 
-                if !isBackupInProgress {
-                    Button("Clear Destination Folder ⚠️") {
-                        backupManager.showConfirmationAlert(
-                            backupFolderURL: backupFolderURL,
-                            showingAlert: $showingAlert,
-                            completionMessage: $completionMessage
-                        )
+                if !viewModel.isBackupInProgress {
+                    Button("Clear folder contents") {
+                        viewModel.requestClearFolder()
                     }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .accessibilityHint("Deletes every file inside the backup folder.")
                 }
 
-                if !isDedupInProgress {
-                    Button("Delete Duplicate Photos 📸") {
-                        deduplicationManager.deleteDuplicatePhotos(
-                            isDedupInProgress: $isDedupInProgress,
-                            dedupProgress: $dedupProgress,
-                            dedupMessage: $dedupMessage,
-                            cancelDedup: $cancelDedup,
-                            fetchMediaCounts: fetchMediaCounts
-                        )
+                if !viewModel.isDedupScanInProgress {
+                    Button("Scan for duplicate photos") {
+                        viewModel.startDuplicateScan()
                     }
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .accessibilityHint("Finds duplicate images by file content. Videos are ignored.")
                 }
 
-                if isDedupInProgress {
-                    ProgressView(value: dedupProgress, total: 1.0)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding()
-                    Text(dedupMessage)
-                        .padding()
-                    Button("Cancel Deduplication 🛑") {
-                        cancelDedup = true
+                if viewModel.isDedupScanInProgress {
+                    ProgressView(value: viewModel.dedupProgress, total: 1.0)
+                        .progressViewStyle(.linear)
+                        .padding(.horizontal)
+                    Text(viewModel.dedupMessage)
+                        .font(.caption)
+                        .padding(.horizontal)
+                    Button("Cancel") {
+                        if viewModel.scannedDuplicateLocalIds.isEmpty {
+                            viewModel.cancelDedupScan()
+                        }
                     }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .disabled(!viewModel.scannedDuplicateLocalIds.isEmpty)
                 }
-
-                Spacer()
             }
+            .padding(.vertical, 24)
         }
         .onAppear {
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("SaveBackupInfo"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                saveBackupInfo()
+            syncTogglesFromState()
+            viewModel.refreshMediaCounts()
+            viewModel.refreshMissingCounts()
+        }
+        .onChange(of: includePhotos) { _ in pushSettings() }
+        .onChange(of: includeVideos) { _ in pushSettings() }
+        .onChange(of: includeLivePhotosAsVideo) { _ in pushSettings() }
+        .onChange(of: showThumbnail) { _ in pushSettings() }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                viewModel.refreshMediaCounts()
+                viewModel.refreshMissingCounts()
             }
         }
-        .onChange(of: scenePhase) { newPhase in
-            if newPhase == .active {
-                if let backupFolderURL = backupFolderURL {
-                    calculateMissingMediaCounts(url: backupFolderURL)
+        .alert(item: Binding(
+            get: { viewModel.alert },
+            set: { viewModel.alert = $0 }
+        )) { alert in
+            Alert(
+                title: Text(alert.title),
+                message: Text(alert.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
+        .alert("Backup folder", isPresented: Binding(
+            get: { viewModel.folderBookmarkStaleNotice != nil },
+            set: { if !$0 { viewModel.dismissBookmarkNotice() } }
+        )) {
+            Button("OK", role: .cancel) { viewModel.dismissBookmarkNotice() }
+        } message: {
+            Text(viewModel.folderBookmarkStaleNotice ?? "")
+        }
+        .confirmationDialog(
+            "Clear backup folder?",
+            isPresented: Binding(
+                get: { viewModel.activeDialog == .clearFolder },
+                set: { new in
+                    if !new { viewModel.activeDialog = nil }
                 }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete all files inside folder", role: .destructive) {
+                viewModel.performClearFolder()
             }
+            Button("Cancel", role: .cancel) { viewModel.activeDialog = nil }
+        } message: {
+            Text("The folder stays selected; only its contents are removed.")
         }
+        .confirmationDialog(
+            "Delete duplicate photos?",
+            isPresented: Binding(
+                get: { viewModel.activeDialog == .deleteDuplicates },
+                set: { new in
+                    if !new { viewModel.cancelDuplicateDeletionDialog() }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete \(viewModel.scannedDuplicateLocalIds.count) photos", role: .destructive) {
+                viewModel.confirmDeleteScannedDuplicates()
+            }
+            Button("Cancel", role: .cancel) { viewModel.cancelDuplicateDeletionDialog() }
+        } message: {
+            Text("One copy of each matching image is kept. Videos are not scanned. This cannot be undone.")
+        }
+    }
+
+    private func syncTogglesFromState() {
+        includePhotos = viewModel.state.includePhotos
+        includeVideos = viewModel.state.includeVideos
+        includeLivePhotosAsVideo = viewModel.state.includeLivePhotosAsVideo
+        showThumbnail = viewModel.state.showThumbnail
+    }
+
+    private func pushSettings() {
+        viewModel.applySettingsFromUI(
+            includePhotos: includePhotos,
+            includeVideos: includeVideos,
+            includeLivePhotosAsVideo: includeLivePhotosAsVideo,
+            showThumbnail: showThumbnail
+        )
+        viewModel.refreshMissingCounts()
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(ArchiveAngelViewModel())
     }
 }
