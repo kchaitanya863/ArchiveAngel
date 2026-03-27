@@ -124,10 +124,12 @@ Issues and pull requests are welcome. Keep changes focused; match existing Swift
 
 ## Screenshots
 
-![Screenshot 2024-07-12 at 2 02 53 PM](https://github.com/user-attachments/assets/9f26eeb4-23c9-4a0f-b9a8-c97b71109daa)
-![Screenshot 2024-07-12 at 2 01 36 PM](https://github.com/user-attachments/assets/5f54796c-6c78-4280-af2c-00b31f282470)
+PNG files are generated into [`docs/store-screenshots/README/`](docs/store-screenshots/README/) by a gated UI test. Run `./scripts/capture-store-screenshots.sh` from the repo root (requires Xcode and a matching Simulator). Use a **6.7-inch** class simulator (default in the script) so the same PNGs match Apple’s primary **iPhone 6.7" display** screenshot slot in App Store Connect.
 
-![simulator_screenshot_C3CBD163-736D-49ED-8F9F-CA874D1FDBE6](https://github.com/user-attachments/assets/1ee8bb56-ed41-4c32-94d8-c764c75f86d2)
-![simulator_screenshot_EC73F66F-529A-4CEB-90BA-FB79F527C938](https://github.com/user-attachments/assets/ffa47bb6-61ef-469e-8cba-6da257ca2833)
-![simulator_screenshot_12FBBD51-1E9C-4EC8-92CD-B468A6973EA5](https://github.com/user-attachments/assets/09b19583-8294-4de1-aa17-93b84c146a66)
-![simulator_screenshot_3FD44AC9-5C35-4687-AAEB-502517CA328B](https://github.com/user-attachments/assets/e9bc0e93-fba7-465c-a96d-a67bcb1a8ab9)
+| Backup | Backup (scroll) | History |
+|:---:|:---:|:---:|
+| ![Backup tab](docs/store-screenshots/README/01-backup.png) | ![Backup scrolled](docs/store-screenshots/README/02-backup-scroll.png) | ![History](docs/store-screenshots/README/03-history.png) |
+
+| History (scroll) | Settings | Settings (scroll) |
+|:---:|:---:|:---:|
+| ![History scrolled](docs/store-screenshots/README/04-history-scroll.png) | ![Settings](docs/store-screenshots/README/05-settings.png) | ![Settings scrolled](docs/store-screenshots/README/06-settings-scope.png) |
