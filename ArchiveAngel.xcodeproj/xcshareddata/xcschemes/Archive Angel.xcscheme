@@ -89,7 +89,10 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots">
+                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPhone">
+               </Test>
+               <Test
+                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPad">
                </Test>
             </SkippedTests>
          </TestableReference>

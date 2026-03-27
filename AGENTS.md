@@ -34,7 +34,7 @@ xcodebuild -scheme "Archive Angel" -destination 'generic/platform=iOS' build
 xcodebuild test -scheme "Archive Angel" -destination 'platform=iOS Simulator,name=<Simulator Name>' -only-testing:'photo backupTests'
 ```
 
-**Store / README screenshots:** `./scripts/capture-store-screenshots.sh` uses the **Store Screenshots** scheme and `-only-testing:…/testCaptureStoreScreenshots`; output is `docs/store-screenshots/README/*.png`. The same test is listed under **SkippedTests** in the **Archive Angel** scheme so normal test runs do not write PNGs. The **photo backupUITests** target’s `TEST_TARGET_NAME` must match the app target (**Archive Angel**).
+**Store / README screenshots:** `./scripts/capture-store-screenshots.sh` runs **Store Screenshots** twice (iPhone + iPad destinations) with `-only-testing:…/testCaptureStoreScreenshots_iPhone` and `…_iPad`; output is `docs/store-screenshots/iphone/*.png` and `docs/store-screenshots/ipad/*.png`. Both are under **SkippedTests** in the **Archive Angel** scheme. The **photo backupUITests** target’s `TEST_TARGET_NAME` must match the app target (**Archive Angel**).
 
 ## Git hygiene
 
