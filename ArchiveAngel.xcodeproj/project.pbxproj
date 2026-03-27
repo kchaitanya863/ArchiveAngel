@@ -31,6 +31,7 @@
 		7AF020112B0302CE00AE2376 /* RunBackupAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */; };
 		7AF030102B0302CE00AE2376 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */; };
 		7AF030112B0302CE00AE2376 /* ActivityLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */; };
+		7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */; };
 		7AF030122B0302CE00AE2376 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030222B0302CE00AE2376 /* HistoryView.swift */; };
 		7AF030132B0302CE00AE2376 /* ArchiveAngelRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */; };
 		7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */; };
@@ -83,6 +84,7 @@
 		7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunBackupAppIntents.swift; sourceTree = "<group>"; };
 		7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
 		7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogStore.swift; sourceTree = "<group>"; };
+		7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogPresenter.swift; sourceTree = "<group>"; };
 		7AF030222B0302CE00AE2376 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelRootView.swift; sourceTree = "<group>"; };
 		7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 				7AF010212B0302CE00AE2376 /* AppStateStore.swift */,
 				7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */,
 				7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */,
+				7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */,
 				7AF010222B0302CE00AE2376 /* BackupNaming.swift */,
 				7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */,
 				7AF070202B0302CE00AE2376 /* BackupScope.swift */,
@@ -336,6 +339,7 @@
 				7AF020112B0302CE00AE2376 /* RunBackupAppIntents.swift in Sources */,
 				7AF030102B0302CE00AE2376 /* ActivityLogEntry.swift in Sources */,
 				7AF030112B0302CE00AE2376 /* ActivityLogStore.swift in Sources */,
+				7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */,
 				7AF030122B0302CE00AE2376 /* HistoryView.swift in Sources */,
 				7AF030132B0302CE00AE2376 /* ArchiveAngelRootView.swift in Sources */,
 				7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */,

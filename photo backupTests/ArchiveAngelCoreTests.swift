@@ -266,4 +266,35 @@ final class ArchiveAngelCoreTests: XCTestCase {
         XCTAssertNil(BackupScope.effectiveIncrementalWatermark(isIncrementalEnabled: false, lastBackupDate: Date()))
         XCTAssertNotNil(BackupScope.effectiveIncrementalWatermark(isIncrementalEnabled: true, lastBackupDate: Date()))
     }
+
+    func testActivityLogKindFilterMatching() {
+        XCTAssertTrue(ActivityLogKind.backupCompleted.matches(.backups))
+        XCTAssertTrue(ActivityLogKind.shortcutBackupCompleted.matches(.backups))
+        XCTAssertFalse(ActivityLogKind.folderChanged.matches(.backups))
+        XCTAssertTrue(ActivityLogKind.folderChanged.matches(.folder))
+        XCTAssertTrue(ActivityLogKind.dedupDeleted.matches(.duplicates))
+        XCTAssertTrue(ActivityLogKind.backupFailed.matches(.issues))
+        XCTAssertTrue(ActivityLogKind.backupCompleted.matches(.all))
+    }
+
+    func testActivityLogExportPlainText() {
+        let e1 = ActivityLogEntry(
+            date: Date(timeIntervalSince1970: 2_000),
+            kind: .backupCompleted,
+            summary: "Done",
+            detail: "Wrote 3"
+        )
+        let e2 = ActivityLogEntry(
+            date: Date(timeIntervalSince1970: 1_500),
+            kind: .folderChanged,
+            summary: "Folder set",
+            detail: nil
+        )
+        let text = ActivityLogExport.plainTextDocument(entries: [e1, e2])
+        XCTAssertTrue(text.contains("Done"))
+        XCTAssertTrue(text.contains("Wrote 3"))
+        XCTAssertTrue(text.contains("Folder set"))
+        XCTAssertTrue(text.contains("backupCompleted"))
+        XCTAssertTrue(text.contains("folderChanged"))
+    }
 }
