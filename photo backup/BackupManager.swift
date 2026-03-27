@@ -24,18 +24,6 @@ extension BackupManagerError: LocalizedError {
 
 final class BackupManager {
 
-    /// Counts library assets that would be considered for backup given include flags.
-    static func countEligibleAssets(includePhotos: Bool, includeVideos: Bool) -> Int {
-        let fetchOptions = PHFetchOptions()
-        let assets = PHAsset.fetchAssets(with: fetchOptions)
-        var n = 0
-        assets.enumerateObjects { asset, _, _ in
-            if asset.mediaType == .image && includePhotos { n += 1 }
-            else if asset.mediaType == .video && includeVideos { n += 1 }
-        }
-        return n
-    }
-
     func startBackup(
         backupFolderURL: URL,
         includePhotos: Bool,
@@ -44,6 +32,9 @@ final class BackupManager {
         showThumbnail: Bool,
         folderLayout: BackupFolderLayout,
         fileNaming: BackupFileNaming,
+        backupAlbumCollectionLocalIdentifiers: [String],
+        backupIncrementalEnabled: Bool,
+        lastBackupDate: Date?,
         isCanceled: @escaping () -> Bool,
         onProgress: @escaping (_ processed: Int, _ total: Int, _ message: String) -> Void,
         onThumbnail: @escaping (UIImage?) -> Void,
@@ -54,12 +45,41 @@ final class BackupManager {
             return
         }
 
-        let totalWork = Self.countEligibleAssets(includePhotos: includePhotos, includeVideos: includeVideos)
+        let incrementalWatermark = BackupScope.effectiveIncrementalWatermark(
+            isIncrementalEnabled: backupIncrementalEnabled,
+            lastBackupDate: lastBackupDate
+        )
+        let albumMembers = BackupScope.albumMemberSet(collectionLocalIdentifiers: backupAlbumCollectionLocalIdentifiers)
+
         var processed = 0
         var filesWritten = 0
         var currentTotalSize: Int64 = 0
 
         DispatchQueue.global(qos: .userInitiated).async {
+            if !backupAlbumCollectionLocalIdentifiers.isEmpty, albumMembers?.isEmpty == true {
+                let folderCount =
+                    (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
+                let outcome = BackupOutcome(
+                    filesWritten: 0,
+                    canceled: false,
+                    totalSizeBytes: 0,
+                    totalItemsInFolder: folderCount
+                )
+                DispatchQueue.main.async {
+                    backupFolderURL.stopAccessingSecurityScopedResource()
+                    onThumbnail(nil)
+                    completion(.success(outcome))
+                }
+                return
+            }
+
+            let totalWork = BackupScope.countEligibleAssets(
+                includePhotos: includePhotos,
+                includeVideos: includeVideos,
+                albumCollectionLocalIdentifiers: backupAlbumCollectionLocalIdentifiers,
+                incrementalWatermark: incrementalWatermark
+            )
+
             let fetchOptions = PHFetchOptions()
             let assets = PHAsset.fetchAssets(with: fetchOptions)
             let imageManager = PHImageManager.default()
@@ -70,8 +90,15 @@ final class BackupManager {
                     return
                 }
 
-                if asset.mediaType == .image && !includePhotos { return }
-                if asset.mediaType == .video && !includeVideos { return }
+                if !BackupScope.shouldVisitAsset(
+                    asset: asset,
+                    includePhotos: includePhotos,
+                    includeVideos: includeVideos,
+                    albumMemberIds: albumMembers,
+                    incrementalWatermark: incrementalWatermark
+                ) {
+                    return
+                }
 
                 processed += 1
                 let fileURL = BackupNaming.backupFileURL(
@@ -86,15 +113,36 @@ final class BackupManager {
                     withIntermediateDirectories: true
                 )
 
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-                       let size = attributes[.size] as? Int64 {
-                        currentTotalSize += size
+                let isBackedUp = BackupNaming.isAssetBackedUp(
+                    asset: asset,
+                    directory: backupFolderURL,
+                    layout: folderLayout,
+                    naming: fileNaming
+                )
+                let fileAtPrimaryExists = FileManager.default.fileExists(atPath: fileURL.path)
+                let reexport = BackupScopeRules.shouldReexportExistingPrimaryFile(
+                    incrementalWatermark: incrementalWatermark,
+                    fileExistsAtPrimaryExportPath: fileAtPrimaryExists,
+                    isBackedUpAtAnyKnownPath: isBackedUp
+                )
+
+                if fileAtPrimaryExists {
+                    if reexport {
+                        Self.removeExistingExportFiles(
+                            at: fileURL,
+                            asset: asset,
+                            includeLivePhotosAsVideo: includeLivePhotosAsVideo
+                        )
+                    } else {
+                        if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                           let size = attributes[.size] as? Int64 {
+                            currentTotalSize += size
+                        }
+                        DispatchQueue.main.async {
+                            onProgress(processed, totalWork, "Skipped (exists) \(processed) of \(totalWork)…")
+                        }
+                        return
                     }
-                    DispatchQueue.main.async {
-                        onProgress(processed, totalWork, "Skipped (exists) \(processed) of \(totalWork)…")
-                    }
-                    return
                 }
 
                 if showThumbnail {
@@ -234,6 +282,18 @@ final class BackupManager {
             try FileManager.default.setAttributes(attributes, ofItemAtPath: url.path)
         } catch {
             print("Error setting file attributes: \(error)")
+        }
+    }
+
+    private static func removeExistingExportFiles(
+        at fileURL: URL,
+        asset: PHAsset,
+        includeLivePhotosAsVideo: Bool
+    ) {
+        try? FileManager.default.removeItem(at: fileURL)
+        if asset.mediaType == .image, includeLivePhotosAsVideo, asset.mediaSubtypes.contains(.photoLive) {
+            let movURL = fileURL.deletingPathExtension().appendingPathExtension("mov")
+            try? FileManager.default.removeItem(at: movURL)
         }
     }
 

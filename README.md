@@ -74,8 +74,6 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 
 ### Backup & library
 
-- **Incremental / “since last backup”** — Track a watermark (e.g. last run time or last-exported asset ids) so reruns only consider new or changed items.
-- **Album- or smart-album–scoped export** — Back up only selected albums or favorites instead of the whole library.
 - **Filters** — Include or exclude screenshots, screen recordings, or other subtypes to reduce noise in the archive.
 - **Sidecar metadata** — Write a small JSON (or XMP) next to each file with dates, camera, optional location (if permitted) for long-term search outside Photos.
 - **Verify pass** — Optional post-run check (e.g. hash or size sample) and a short “verified” summary.
@@ -112,6 +110,8 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 
 - Shortcuts intent **Run backup to last folder**, **History** tab with activity log, **Change** backup folder when one is already set, and file-backed **state** + **activity** JSON under Application Support.
 - **Disk space** — Rough size estimate for items not yet in the backup folder, destination free space when readable, on-screen warnings when space looks tight or too small, and a confirmation sheet before starting when the estimate exceeds free space.
+- **Incremental backup** — Optional “only new or changed since last backup” using the **library** and last successful backup time (not “missing from this folder”), so switching to a new destination only exports items added or edited after that time; turn off for a full copy to an empty folder.
+- **Album scope** — Limit backup, missing counts, and disk estimates to selected user albums and smart albums (e.g. Favorites); leave none selected for the whole library.
 
 ## Contributing
 

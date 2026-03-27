@@ -139,6 +139,12 @@ final class ArchiveAngelViewModel: ObservableObject {
         persist()
     }
 
+    func applyBackupScopeFromUI(albumCollectionLocalIdentifiers: [String], incrementalEnabled: Bool) {
+        state.backupAlbumCollectionLocalIdentifiers = albumCollectionLocalIdentifiers.sorted()
+        state.backupIncrementalEnabled = incrementalEnabled
+        persist()
+    }
+
     // MARK: - Backup folder
 
     /// Resolves the saved folder URL. Mutations to `state` (e.g. clearing a stale bookmark) are applied asynchronously
@@ -223,6 +229,12 @@ final class ArchiveAngelViewModel: ObservableObject {
         let includePhotos = state.includePhotos
         let includeVideos = state.includeVideos
         let includeLive = state.includeLivePhotosAsVideo
+        let albumIds = state.backupAlbumCollectionLocalIdentifiers
+        let incrementalWatermark = BackupScope.effectiveIncrementalWatermark(
+            isIncrementalEnabled: state.backupIncrementalEnabled,
+            lastBackupDate: state.lastBackupDate
+        )
+        let albumMembers = BackupScope.albumMemberSet(collectionLocalIdentifiers: albumIds)
 
         DispatchQueue.global(qos: .utility).async {
             guard url.startAccessingSecurityScopedResource() else { return }
@@ -234,22 +246,32 @@ final class ArchiveAngelViewModel: ObservableObject {
             let fetchOptions = PHFetchOptions()
             let assets = PHAsset.fetchAssets(with: fetchOptions)
             assets.enumerateObjects { asset, _, _ in
-                if asset.mediaType == .image && !includePhotos { return }
-                if asset.mediaType == .video && !includeVideos { return }
-                if BackupNaming.isAssetBackedUp(
+                if !BackupScope.shouldVisitAsset(
+                    asset: asset,
+                    includePhotos: includePhotos,
+                    includeVideos: includeVideos,
+                    albumMemberIds: albumMembers,
+                    incrementalWatermark: incrementalWatermark
+                ) {
+                    return
+                }
+                let backedUp = BackupNaming.isAssetBackedUp(
                     asset: asset,
                     directory: url,
                     layout: layout,
                     naming: naming
-                ) {
-                    return
-                }
-                if asset.mediaType == .image { missingPhotos += 1 }
-                else if asset.mediaType == .video { missingVideos += 1 }
-                estimatedBytes += BackupDiskSpaceEstimator.estimatedExportBytes(
-                    for: asset,
-                    includeLivePhotosAsVideo: includeLive
                 )
+                if !backedUp {
+                    if asset.mediaType == .image { missingPhotos += 1 }
+                    else if asset.mediaType == .video { missingVideos += 1 }
+                }
+                let needsSpaceEstimate = incrementalWatermark != nil || !backedUp
+                if needsSpaceEstimate {
+                    estimatedBytes += BackupDiskSpaceEstimator.estimatedExportBytes(
+                        for: asset,
+                        includeLivePhotosAsVideo: includeLive
+                    )
+                }
             }
 
             let freeBytes = BackupDiskSpaceEstimator.volumeAvailableCapacityBytes(forContainingItemAt: url)
@@ -306,6 +328,9 @@ final class ArchiveAngelViewModel: ObservableObject {
             showThumbnail: state.showThumbnail,
             folderLayout: state.backupFolderLayout,
             fileNaming: state.backupFileNaming,
+            backupAlbumCollectionLocalIdentifiers: state.backupAlbumCollectionLocalIdentifiers,
+            backupIncrementalEnabled: state.backupIncrementalEnabled,
+            lastBackupDate: state.lastBackupDate,
             isCanceled: { [weak self] in
                 self?.cancelBackupRequested ?? false
             },
@@ -324,7 +349,9 @@ final class ArchiveAngelViewModel: ObservableObject {
                 switch result {
                 case .success(let outcome):
                     self.state.totalBackupSize = outcome.totalSizeBytes
-                    self.state.lastBackupDate = Date()
+                    if !outcome.canceled {
+                        self.state.lastBackupDate = Date()
+                    }
                     self.persist()
                     if outcome.canceled {
                         self.recordActivity(

@@ -35,6 +35,8 @@ final class ArchiveAngelCoreTests: XCTestCase {
         state.includePhotos = false
         state.backupFolderLayout = .byYearMonth
         state.backupFileNaming = .datePrefixIdentifierOriginal
+        state.backupAlbumCollectionLocalIdentifiers = ["a", "b"]
+        state.backupIncrementalEnabled = true
         let data = try JSONEncoder().encode(state)
         let decoded = try JSONDecoder().decode(AppPersistentState.self, from: data)
         XCTAssertEqual(decoded.totalBackupSize, 42)
@@ -42,6 +44,8 @@ final class ArchiveAngelCoreTests: XCTestCase {
         XCTAssertEqual(decoded.lastBackupDate, state.lastBackupDate)
         XCTAssertEqual(decoded.backupFolderLayout, .byYearMonth)
         XCTAssertEqual(decoded.backupFileNaming, .datePrefixIdentifierOriginal)
+        XCTAssertEqual(decoded.backupAlbumCollectionLocalIdentifiers, ["a", "b"])
+        XCTAssertEqual(decoded.backupIncrementalEnabled, true)
     }
 
     func testAppPersistentStateDecodesMissingOutputKeys() throws {
@@ -52,6 +56,8 @@ final class ArchiveAngelCoreTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AppPersistentState.self, from: data)
         XCTAssertEqual(decoded.backupFolderLayout, .flat)
         XCTAssertEqual(decoded.backupFileNaming, .identifierAndOriginal)
+        XCTAssertEqual(decoded.backupAlbumCollectionLocalIdentifiers, [])
+        XCTAssertEqual(decoded.backupIncrementalEnabled, false)
     }
 
     func testBackupOutputPathMathFolders() {
@@ -213,5 +219,51 @@ final class ArchiveAngelCoreTests: XCTestCase {
         )
         XCTAssertGreaterThan(image, 100_000)
         XCTAssertLessThanOrEqual(image, 40_000_000)
+    }
+
+    func testBackupScopeRules() {
+        let watermark = Date(timeIntervalSince1970: 100)
+        XCTAssertTrue(
+            BackupScopeRules.isAssetNewOrChangedSinceLibraryWatermark(
+                creationDate: Date(timeIntervalSince1970: 150),
+                modificationDate: Date(timeIntervalSince1970: 150),
+                watermark: watermark
+            )
+        )
+        XCTAssertTrue(
+            BackupScopeRules.isAssetNewOrChangedSinceLibraryWatermark(
+                creationDate: Date(timeIntervalSince1970: 50),
+                modificationDate: Date(timeIntervalSince1970: 150),
+                watermark: watermark
+            )
+        )
+        XCTAssertFalse(
+            BackupScopeRules.isAssetNewOrChangedSinceLibraryWatermark(
+                creationDate: Date(timeIntervalSince1970: 50),
+                modificationDate: Date(timeIntervalSince1970: 90),
+                watermark: watermark
+            )
+        )
+        XCTAssertTrue(
+            BackupScopeRules.shouldReexportExistingPrimaryFile(
+                incrementalWatermark: watermark,
+                fileExistsAtPrimaryExportPath: true,
+                isBackedUpAtAnyKnownPath: true
+            )
+        )
+        XCTAssertFalse(
+            BackupScopeRules.shouldReexportExistingPrimaryFile(
+                incrementalWatermark: nil,
+                fileExistsAtPrimaryExportPath: true,
+                isBackedUpAtAnyKnownPath: true
+            )
+        )
+        XCTAssertTrue(BackupScopeRules.passesAlbumFilter(assetLocalIdentifier: "x", albumMemberIds: nil))
+        XCTAssertTrue(BackupScopeRules.passesAlbumFilter(assetLocalIdentifier: "x", albumMemberIds: ["x", "y"]))
+        XCTAssertFalse(BackupScopeRules.passesAlbumFilter(assetLocalIdentifier: "z", albumMemberIds: ["x"]))
+
+        XCTAssertNil(BackupScope.effectiveIncrementalWatermark(isIncrementalEnabled: true, lastBackupDate: nil))
+        XCTAssertNil(BackupScope.effectiveIncrementalWatermark(isIncrementalEnabled: false, lastBackupDate: Date()))
+        XCTAssertNotNil(BackupScope.effectiveIncrementalWatermark(isIncrementalEnabled: true, lastBackupDate: Date()))
     }
 }

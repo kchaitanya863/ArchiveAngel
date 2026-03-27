@@ -103,6 +103,44 @@ struct ContentView: View {
             .accessibilityLabel("Refresh missing counts")
         }
         .padding(.horizontal)
+
+        if let summary = backupScopeSummary {
+            Text(summary)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal)
+                .accessibilityLabel(backupScopeAccessibilityLabel)
+        }
+    }
+
+    private var backupScopeSummary: String? {
+        let albums = viewModel.state.backupAlbumCollectionLocalIdentifiers.count
+        let incremental = viewModel.state.backupIncrementalEnabled
+        if albums == 0, !incremental { return nil }
+        var parts: [String] = []
+        if albums > 0 {
+            parts.append("\(albums) album\(albums == 1 ? "" : "s")")
+        } else {
+            parts.append("Entire library")
+        }
+        parts.append(incremental ? "incremental on" : "incremental off")
+        return parts.joined(separator: " · ")
+    }
+
+    private var backupScopeAccessibilityLabel: String {
+        let albums = viewModel.state.backupAlbumCollectionLocalIdentifiers.count
+        let incremental = viewModel.state.backupIncrementalEnabled
+        let scopeText =
+            albums > 0
+            ? "Backup scope is limited to \(albums) selected albums."
+            : "Backup scope is the entire photo library."
+        let incText =
+            incremental
+            ? "Incremental backup is on; only items added or edited in the library after the last successful backup are exported, even if the backup folder is new or empty."
+            : "Incremental backup is off."
+        return "\(scopeText) \(incText)"
     }
 
     private var settingsHintRow: some View {

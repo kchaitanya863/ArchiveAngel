@@ -3,6 +3,7 @@ import Foundation
 /// On-disk app preferences and backup metadata (JSON in Application Support).
 struct AppPersistentState: Codable, Equatable {
     var totalBackupSize: Int64
+    /// Set when a backup **finishes successfully** (in-app or Shortcuts). Used as the library watermark for incremental mode.
     var lastBackupDate: Date?
     /// Security-scoped bookmark for the user-selected backup folder.
     var backupFolderBookmark: Data?
@@ -14,6 +15,10 @@ struct AppPersistentState: Codable, Equatable {
     var backupFolderLayout: BackupFolderLayout
     /// Filename pattern for exported assets.
     var backupFileNaming: BackupFileNaming
+    /// When non-empty, only assets in these album/smart-album collections are considered. Empty = entire library.
+    var backupAlbumCollectionLocalIdentifiers: [String]
+    /// When true, assets already backed up are skipped unless modified after `lastBackupDate` (watermark).
+    var backupIncrementalEnabled: Bool
 
     static let `default` = AppPersistentState(
         totalBackupSize: 0,
@@ -24,7 +29,9 @@ struct AppPersistentState: Codable, Equatable {
         includeLivePhotosAsVideo: true,
         showThumbnail: true,
         backupFolderLayout: .flat,
-        backupFileNaming: .identifierAndOriginal
+        backupFileNaming: .identifierAndOriginal,
+        backupAlbumCollectionLocalIdentifiers: [],
+        backupIncrementalEnabled: false
     )
 
     enum CodingKeys: String, CodingKey {
@@ -37,6 +44,8 @@ struct AppPersistentState: Codable, Equatable {
         case showThumbnail
         case backupFolderLayout
         case backupFileNaming
+        case backupAlbumCollectionLocalIdentifiers
+        case backupIncrementalEnabled
     }
 
     init(
@@ -48,7 +57,9 @@ struct AppPersistentState: Codable, Equatable {
         includeLivePhotosAsVideo: Bool,
         showThumbnail: Bool,
         backupFolderLayout: BackupFolderLayout,
-        backupFileNaming: BackupFileNaming
+        backupFileNaming: BackupFileNaming,
+        backupAlbumCollectionLocalIdentifiers: [String],
+        backupIncrementalEnabled: Bool
     ) {
         self.totalBackupSize = totalBackupSize
         self.lastBackupDate = lastBackupDate
@@ -59,6 +70,8 @@ struct AppPersistentState: Codable, Equatable {
         self.showThumbnail = showThumbnail
         self.backupFolderLayout = backupFolderLayout
         self.backupFileNaming = backupFileNaming
+        self.backupAlbumCollectionLocalIdentifiers = backupAlbumCollectionLocalIdentifiers
+        self.backupIncrementalEnabled = backupIncrementalEnabled
     }
 
     init(from decoder: Decoder) throws {
@@ -73,6 +86,9 @@ struct AppPersistentState: Codable, Equatable {
         backupFolderLayout = try c.decodeIfPresent(BackupFolderLayout.self, forKey: .backupFolderLayout) ?? .flat
         backupFileNaming = try c.decodeIfPresent(BackupFileNaming.self, forKey: .backupFileNaming)
             ?? .identifierAndOriginal
+        backupAlbumCollectionLocalIdentifiers =
+            try c.decodeIfPresent([String].self, forKey: .backupAlbumCollectionLocalIdentifiers) ?? []
+        backupIncrementalEnabled = try c.decodeIfPresent(Bool.self, forKey: .backupIncrementalEnabled) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -86,5 +102,7 @@ struct AppPersistentState: Codable, Equatable {
         try c.encode(showThumbnail, forKey: .showThumbnail)
         try c.encode(backupFolderLayout, forKey: .backupFolderLayout)
         try c.encode(backupFileNaming, forKey: .backupFileNaming)
+        try c.encode(backupAlbumCollectionLocalIdentifiers, forKey: .backupAlbumCollectionLocalIdentifiers)
+        try c.encode(backupIncrementalEnabled, forKey: .backupIncrementalEnabled)
     }
 }
