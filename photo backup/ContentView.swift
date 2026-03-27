@@ -2,12 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var viewModel: ArchiveAngelViewModel
-    @Environment(\.scenePhase) private var scenePhase
-
-    @State private var includePhotos = true
-    @State private var includeVideos = true
-    @State private var includeLivePhotosAsVideo = true
-    @State private var showThumbnail = true
 
     var body: some View {
         mainScrollView
@@ -17,52 +11,6 @@ struct ContentView: View {
                 }
             }
             .onAppear(perform: handleAppear)
-            .onChange(of: includePhotos) { _ in pushSettings() }
-            .onChange(of: includeVideos) { _ in pushSettings() }
-            .onChange(of: includeLivePhotosAsVideo) { _ in pushSettings() }
-            .onChange(of: showThumbnail) { _ in pushSettings() }
-            .onChange(of: scenePhase) { phase in
-                if phase == .active {
-                    viewModel.refreshMediaCounts()
-                    viewModel.refreshMissingCounts()
-                }
-            }
-            .alert(item: alertItemBinding) { alert in
-                Alert(
-                    title: Text(alert.title),
-                    message: Text(alert.message),
-                    dismissButton: .default(Text("OK"))
-                )
-            }
-            .alert("Backup folder", isPresented: bookmarkNoticePresented, actions: {
-                Button("OK", role: .cancel) { viewModel.dismissBookmarkNotice() }
-            }, message: {
-                Text(viewModel.folderBookmarkStaleNotice ?? "")
-            })
-            .confirmationDialog(
-                "Clear backup folder?",
-                isPresented: clearFolderDialogPresented,
-                titleVisibility: .visible
-            ) {
-                Button("Delete all files inside folder", role: .destructive) {
-                    viewModel.performClearFolder()
-                }
-                Button("Cancel", role: .cancel) { viewModel.activeDialog = nil }
-            } message: {
-                Text("The folder stays selected; only its contents are removed.")
-            }
-            .confirmationDialog(
-                "Delete duplicate photos?",
-                isPresented: deleteDuplicatesDialogPresented,
-                titleVisibility: .visible
-            ) {
-                Button("Delete \(viewModel.scannedDuplicateLocalIds.count) photos", role: .destructive) {
-                    viewModel.confirmDeleteScannedDuplicates()
-                }
-                Button("Cancel", role: .cancel) { viewModel.cancelDuplicateDeletionDialog() }
-            } message: {
-                Text("One copy of each matching image is kept. Videos are not scanned. This cannot be undone.")
-            }
     }
 
     // MARK: - Main stack (split for Swift compiler / previews)
@@ -73,13 +21,11 @@ struct ContentView: View {
                 heroSection
                 chooseBackupFolderCallout
                 libraryStatsSection
-                backupSettingsSection
+                settingsHintRow
                 backupMetadataSection
                 primaryBackupButton
                 backupDestinationSection
                 backupProgressSection
-                clearFolderButton
-                deduplicationSection
             }
             .padding(.vertical, 24)
         }
@@ -158,22 +104,28 @@ struct ContentView: View {
         .padding(.horizontal)
     }
 
+    private var settingsHintRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "gearshape")
+                .foregroundColor(.secondary)
+                .accessibilityHidden(true)
+            Text("Filters, export layout, duplicate scan, and clearing the folder are in the Settings tab.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Filters, export layout, duplicate scan, and clearing the folder are in the Settings tab.")
+    }
+
     private var missingCountsLabel: String {
         "Missing — photos: \(viewModel.totalMissingPhotosCount), videos: \(viewModel.totalMissingVideosCount)"
     }
 
     private var missingCountsAccessibilityLabel: String {
         "Missing from backup: \(viewModel.totalMissingPhotosCount) photos, \(viewModel.totalMissingVideosCount) videos"
-    }
-
-    @ViewBuilder private var backupSettingsSection: some View {
-        GroupBox("Backup settings") {
-            Toggle("Include photos", isOn: $includePhotos)
-            Toggle("Include videos", isOn: $includeVideos)
-            Toggle("Export Live Photos as video", isOn: $includeLivePhotosAsVideo)
-            Toggle("Show thumbnail while copying", isOn: $showThumbnail)
-        }
-        .padding(.horizontal)
     }
 
     @ViewBuilder private var backupMetadataSection: some View {
@@ -232,99 +184,8 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder private var clearFolderButton: some View {
-        if !viewModel.isBackupInProgress {
-            Button("Clear folder contents") {
-                viewModel.requestClearFolder()
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .accessibilityHint("Deletes every file inside the backup folder.")
-        }
-    }
-
-    @ViewBuilder private var deduplicationSection: some View {
-        if !viewModel.isDedupScanInProgress {
-            Button("Scan for duplicate photos") {
-                viewModel.startDuplicateScan()
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-            .accessibilityHint("Finds duplicate images by file content. Videos are ignored.")
-        }
-
-        if viewModel.isDedupScanInProgress {
-            ProgressView(value: viewModel.dedupProgress, total: 1.0)
-                .progressViewStyle(.linear)
-                .padding(.horizontal)
-            Text(viewModel.dedupMessage)
-                .font(.caption)
-                .padding(.horizontal)
-            Button("Cancel") {
-                if viewModel.scannedDuplicateLocalIds.isEmpty {
-                    viewModel.cancelDedupScan()
-                }
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .disabled(!viewModel.scannedDuplicateLocalIds.isEmpty)
-        }
-    }
-
-    // MARK: - Bindings (ease type checker)
-
-    private var alertItemBinding: Binding<ArchiveAngelAlert?> {
-        Binding(
-            get: { viewModel.alert },
-            set: { viewModel.alert = $0 }
-        )
-    }
-
-    private var bookmarkNoticePresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.folderBookmarkStaleNotice != nil },
-            set: { if !$0 { viewModel.dismissBookmarkNotice() } }
-        )
-    }
-
-    private var clearFolderDialogPresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.activeDialog == .clearFolder },
-            set: { new in
-                if !new { viewModel.activeDialog = nil }
-            }
-        )
-    }
-
-    private var deleteDuplicatesDialogPresented: Binding<Bool> {
-        Binding(
-            get: { viewModel.activeDialog == .deleteDuplicates },
-            set: { new in
-                if !new { viewModel.cancelDuplicateDeletionDialog() }
-            }
-        )
-    }
-
     private func handleAppear() {
-        syncTogglesFromState()
         viewModel.refreshMediaCounts()
-        viewModel.refreshMissingCounts()
-    }
-
-    private func syncTogglesFromState() {
-        includePhotos = viewModel.state.includePhotos
-        includeVideos = viewModel.state.includeVideos
-        includeLivePhotosAsVideo = viewModel.state.includeLivePhotosAsVideo
-        showThumbnail = viewModel.state.showThumbnail
-    }
-
-    private func pushSettings() {
-        viewModel.applySettingsFromUI(
-            includePhotos: includePhotos,
-            includeVideos: includeVideos,
-            includeLivePhotosAsVideo: includeLivePhotosAsVideo,
-            showThumbnail: showThumbnail
-        )
         viewModel.refreshMissingCounts()
     }
 }

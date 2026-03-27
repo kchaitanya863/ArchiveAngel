@@ -2,13 +2,32 @@ import Foundation
 import Photos
 
 enum BackupNaming {
-    /// Builds a stable, filesystem-safe backup filename using the asset id and an original name when available.
-    static func backupFileURL(directory: URL, asset: PHAsset) -> URL {
+    /// Builds a stable, filesystem-safe backup URL using layout, naming style, and resource metadata.
+    static func backupFileURL(
+        directory: URL,
+        asset: PHAsset,
+        layout: BackupFolderLayout = .flat,
+        naming: BackupFileNaming = .identifierAndOriginal
+    ) -> URL {
         let original = preferredOriginalFilename(for: asset)
         let safeOriginal = sanitizeFilename(original)
         let idPart = asset.localIdentifier.replacingOccurrences(of: "/", with: "_")
-        let name = idPart + "_" + safeOriginal
-        return directory.appendingPathComponent(name)
+        let basename = BackupOutputPathMath.fileBasename(
+            naming: naming,
+            sanitizedId: idPart,
+            sanitizedOriginalFilename: safeOriginal,
+            creationDate: asset.creationDate
+        )
+        let subdirs = BackupOutputPathMath.folderComponents(
+            layout: layout,
+            creationDate: asset.creationDate,
+            mediaType: asset.mediaType
+        )
+        var url = directory
+        for part in subdirs {
+            url = url.appendingPathComponent(part, isDirectory: false)
+        }
+        return url.appendingPathComponent(basename)
     }
 
     /// Older app builds concatenated local id + filename without a separator; used only to detect existing files.
@@ -18,9 +37,32 @@ enum BackupNaming {
         return directory.appendingPathComponent(name)
     }
 
-    static func isAssetBackedUp(asset: PHAsset, directory: URL) -> Bool {
-        let primary = backupFileURL(directory: directory, asset: asset)
+    /// Whether a file for this asset already exists for the current layout/naming, or at a legacy flat path.
+    static func isAssetBackedUp(
+        asset: PHAsset,
+        directory: URL,
+        layout: BackupFolderLayout,
+        naming: BackupFileNaming
+    ) -> Bool {
+        let primary = backupFileURL(directory: directory, asset: asset, layout: layout, naming: naming)
         if FileManager.default.fileExists(atPath: primary.path) { return true }
+
+        let flatCurrentNaming = backupFileURL(directory: directory, asset: asset, layout: .flat, naming: naming)
+        if flatCurrentNaming != primary, FileManager.default.fileExists(atPath: flatCurrentNaming.path) {
+            return true
+        }
+
+        let flatDefault = backupFileURL(
+            directory: directory,
+            asset: asset,
+            layout: .flat,
+            naming: .identifierAndOriginal
+        )
+        if flatDefault != primary, flatDefault != flatCurrentNaming,
+           FileManager.default.fileExists(atPath: flatDefault.path) {
+            return true
+        }
+
         let legacy = legacyBackupFileURL(directory: directory, asset: asset)
         return FileManager.default.fileExists(atPath: legacy.path)
     }

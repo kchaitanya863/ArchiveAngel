@@ -6,7 +6,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 
 ## Features
 
-- **Backup** — Copies images and/or videos into a user-selected directory; skips files that already exist; optional Live Photo companion `.mov`; preserves creation/modification dates on exported files.
+- **Backup** — Copies images and/or videos into a user-selected directory; skips files that already exist; optional Live Photo companion `.mov`; preserves creation/modification dates on exported files. You can choose **folder structure** (flat, by UTC date, by photos vs videos, or combined) and **filename pattern** (ID + original name, date prefix, or ID + extension).
 - **Progress** — Linear progress by number of library items that match your filters; optional thumbnail while copying; cancel anytime.
 - **Folder bookmark** — The backup location is stored as a bookmark in on-disk app state so it can be restored after relaunch (you may need to re-pick the folder if the bookmark goes stale).
 - **State on disk** — Preferences and backup stats live in Application Support as JSON (`ArchiveAngel/app_state.json`), with a one-time migration from legacy `UserDefaults` keys.
@@ -14,6 +14,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 - **Duplicate photos** — Scans **images only** (SHA-256 of image data); videos are not scanned. After a scan, you confirm before anything is deleted from the library.
 - **Siri & Shortcuts (iOS 16+)** — App Intent **“Run backup to last folder”** opens the app and runs the same backup as the in-app button, using your saved folder bookmark and settings. Find it under the app in Shortcuts, or say e.g. “Run backup in Archive Angel” (phrase depends on your app display name).
 - **History tab** — Overview of total backup size, last backup time, and counts from the log; chronological **activity log** (backups, folder changes, clears, duplicate scans/deletes, Shortcuts runs). Stored under `ArchiveAngel/activity_log.json` (newest first, capped). You can clear the log without touching files or settings.
+- **Settings tab** — Configure what to include, Live Photo export, thumbnails, folder structure and filenames, plus maintenance: clear backup folder and scan for duplicate photos.
 
 ## Requirements
 
@@ -25,11 +26,11 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 
 | Area | Location |
 |------|----------|
-| UI | `photo backup/ArchiveAngelRootView.swift` (tabs), `ContentView.swift`, `HistoryView.swift` |
+| UI | `photo backup/ArchiveAngelRootView.swift` (Backup, History, Settings tabs), `ContentView.swift`, `HistoryView.swift`, `BackupSettingsView.swift` |
 | View model | `photo backup/ArchiveAngelViewModel.swift` |
 | Backup / clear folder | `photo backup/BackupManager.swift` |
 | Dedup scan + delete | `photo backup/DeduplicationManager.swift` |
-| Filenames & progress helpers | `photo backup/BackupNaming.swift`, `BackupProgressMath` |
+| Filenames, output layout & progress helpers | `photo backup/BackupNaming.swift`, `BackupOutputSettings.swift`, `BackupProgressMath` |
 | Persistent JSON state | `photo backup/AppPersistentState.swift`, `AppStateStore.swift` |
 | Activity log | `photo backup/ActivityLogEntry.swift`, `ActivityLogStore.swift` |
 | Document folder picker | `photo backup/DocumentPicker.swift` |

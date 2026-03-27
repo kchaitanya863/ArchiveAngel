@@ -43,7 +43,7 @@ enum RunBackupIntentError: LocalizedError {
 struct RunBackupToLastFolderIntent: AppIntent {
     static var title: LocalizedStringResource = "Run backup to last folder"
     static var description = IntentDescription(
-        "Exports new items from your photo library to the backup folder you last chose in Archive Angel. Uses the same include toggles and Live Photo option as in the app."
+        "Exports new items from your photo library to the backup folder you last chose in Archive Angel. Uses the same include toggles, Live Photo option, and output layout/naming as in the app."
     )
     /// Brings the app to the foreground so the backup can run with fewer time limits and access is reliable.
     static var openAppWhenRun: Bool = true
@@ -84,6 +84,8 @@ struct RunBackupToLastFolderIntent: AppIntent {
                     includeVideos: state.includeVideos,
                     includeLivePhotosAsVideo: state.includeLivePhotosAsVideo,
                     showThumbnail: state.showThumbnail,
+                    folderLayout: state.backupFolderLayout,
+                    fileNaming: state.backupFileNaming,
                     isCanceled: { false },
                     onProgress: { _, _, _ in },
                     onThumbnail: { _ in },

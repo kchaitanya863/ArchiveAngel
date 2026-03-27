@@ -122,6 +122,12 @@ final class ArchiveAngelViewModel: ObservableObject {
         persist()
     }
 
+    func applyOutputSettingsFromUI(folderLayout: BackupFolderLayout, fileNaming: BackupFileNaming) {
+        state.backupFolderLayout = folderLayout
+        state.backupFileNaming = fileNaming
+        persist()
+    }
+
     // MARK: - Backup folder
 
     /// Resolves the saved folder URL. Mutations to `state` (e.g. clearing a stale bookmark) are applied asynchronously
@@ -207,7 +213,14 @@ final class ArchiveAngelViewModel: ObservableObject {
         assets.enumerateObjects { [self] asset, _, _ in
             if asset.mediaType == .image && !self.state.includePhotos { return }
             if asset.mediaType == .video && !self.state.includeVideos { return }
-            if BackupNaming.isAssetBackedUp(asset: asset, directory: url) { return }
+            if BackupNaming.isAssetBackedUp(
+                asset: asset,
+                directory: url,
+                layout: self.state.backupFolderLayout,
+                naming: self.state.backupFileNaming
+            ) {
+                return
+            }
             if asset.mediaType == .image { missingPhotos += 1 }
             else if asset.mediaType == .video { missingVideos += 1 }
         }
@@ -234,6 +247,8 @@ final class ArchiveAngelViewModel: ObservableObject {
             includeVideos: state.includeVideos,
             includeLivePhotosAsVideo: state.includeLivePhotosAsVideo,
             showThumbnail: state.showThumbnail,
+            folderLayout: state.backupFolderLayout,
+            fileNaming: state.backupFileNaming,
             isCanceled: { [weak self] in
                 self?.cancelBackupRequested ?? false
             },

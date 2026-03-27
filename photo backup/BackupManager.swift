@@ -42,6 +42,8 @@ final class BackupManager {
         includeVideos: Bool,
         includeLivePhotosAsVideo: Bool,
         showThumbnail: Bool,
+        folderLayout: BackupFolderLayout,
+        fileNaming: BackupFileNaming,
         isCanceled: @escaping () -> Bool,
         onProgress: @escaping (_ processed: Int, _ total: Int, _ message: String) -> Void,
         onThumbnail: @escaping (UIImage?) -> Void,
@@ -72,7 +74,17 @@ final class BackupManager {
                 if asset.mediaType == .video && !includeVideos { return }
 
                 processed += 1
-                let fileURL = BackupNaming.backupFileURL(directory: backupFolderURL, asset: asset)
+                let fileURL = BackupNaming.backupFileURL(
+                    directory: backupFolderURL,
+                    asset: asset,
+                    layout: folderLayout,
+                    naming: fileNaming
+                )
+                let parentDir = fileURL.deletingLastPathComponent()
+                try? FileManager.default.createDirectory(
+                    at: parentDir,
+                    withIntermediateDirectories: true
+                )
 
                 if FileManager.default.fileExists(atPath: fileURL.path) {
                     if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
