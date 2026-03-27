@@ -67,6 +67,51 @@ Adjust the simulator name to one installed on your Mac (`xcodebuild -showdestina
 
 Photo library usage is described in `photo-backup-Info.plist` (`NSPhotoLibraryUsageDescription`). The app reads the library for backup and duplicate detection; deleting duplicates uses `PHPhotoLibrary` change requests after you confirm.
 
+## Future ideas
+
+Possible enhancements (not committed work—prioritize as you like). Some items overlap.
+
+### Backup & library
+
+- **Incremental / “since last backup”** — Track a watermark (e.g. last run time or last-exported asset ids) so reruns only consider new or changed items.
+- **Album- or smart-album–scoped export** — Back up only selected albums or favorites instead of the whole library.
+- **Filters** — Include or exclude screenshots, screen recordings, or other subtypes to reduce noise in the archive.
+- **Sidecar metadata** — Write a small JSON (or XMP) next to each file with dates, camera, optional location (if permitted) for long-term search outside Photos.
+- **Verify pass** — Optional post-run check (e.g. hash or size sample) and a short “verified” summary.
+- **Bounded concurrency** — Export pipeline with a small parallel queue where safe, to speed very large libraries without blowing memory.
+
+### Duplicate detection
+
+- **Preview before delete** — Show duplicate groups in a grid and let the user pick which copy to keep.
+- **Near-duplicates** — Optional similarity (bursts, “same moment”) beyond byte-identical hashes; higher UX and risk, needs clear labeling.
+- **Scope dedup to an album** — Safer than whole-library delete when junk is known to live in one album.
+
+### Destinations & workflows
+
+- **Multiple named destinations** — Several saved folders (e.g. “NAS”, “Work iCloud”) with a default or last-used per shortcut.
+- **Background / resume** — Use background tasks or phased work where iOS allows, with explicit “resume” behavior.
+- **Share extension** — “Save to Archive Angel” from Sharesheet into the chosen backup folder (sandbox and permission design required).
+- **More Shortcuts intents** — e.g. open History, trigger dedup scan, pick destination by name.
+
+### Trust, clarity & polish
+
+- **Dry-run** — “Would copy N, skip M” without writing (or write to a temp sandbox).
+- **Disk space estimate** — Rough required space before starting; warn when the destination is low.
+- **Export / onboarding copy** — Short first-run flow: permissions → folder → what “clear folder” vs “delete from library” means.
+- **Localization** — `Localizable.strings` (or string catalogs) for non-English users.
+- **Accessibility** — Full VoiceOver pass, Dynamic Type, and larger hit targets on destructive actions.
+
+### Power users & platform
+
+- **Export presets** — HEIC vs JPEG, quality, max video resolution caps where APIs allow.
+- **Home Screen widget** — e.g. last backup date and approximate “pending” count (with sane refresh rules).
+- **iPad** — Sidebar layout, keyboard shortcuts, more use of horizontal space.
+- **macOS target** — Real Mac app with AppKit document APIs (today the project is iOS/iPadOS only).
+
+### Already in the app (for context)
+
+- Shortcuts intent **Run backup to last folder**, **History** tab with activity log, **Change** backup folder when one is already set, and file-backed **state** + **activity** JSON under Application Support.
+
 ## Contributing
 
 Issues and pull requests are welcome. Keep changes focused; match existing Swift style and update tests when changing logic that is covered by `ArchiveAngelCoreTests`.
