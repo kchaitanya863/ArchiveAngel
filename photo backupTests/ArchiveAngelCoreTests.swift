@@ -57,4 +57,40 @@ final class ArchiveAngelCoreTests: XCTestCase {
         XCTAssertEqual(loaded.totalBackupSize, 99)
         XCTAssertEqual(loaded.includeVideos, false)
     }
+
+    func testActivityLogEntryRoundTrip() throws {
+        let entry = ActivityLogEntry(
+            kind: .backupCompleted,
+            summary: "Test",
+            detail: "Detail line"
+        )
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(ActivityLogEntry.self, from: data)
+        XCTAssertEqual(decoded.kind, .backupCompleted)
+        XCTAssertEqual(decoded.summary, "Test")
+        XCTAssertEqual(decoded.detail, "Detail line")
+    }
+
+    func testActivityLogStoreAppendTrimAndClear() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let store = ActivityLogStore(storageDirectory: dir, maxEntries: 3)
+        XCTAssertTrue(store.loadEntries().isEmpty)
+
+        store.append(ActivityLogEntry(kind: .folderChanged, summary: "One"))
+        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Two"))
+        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Three"))
+        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Four"))
+
+        let entries = store.loadEntries()
+        XCTAssertEqual(entries.count, 3)
+        XCTAssertTrue(entries.contains { $0.summary == "Four" })
+        XCTAssertFalse(entries.contains { $0.summary == "One" })
+
+        store.clearAll()
+        XCTAssertTrue(store.loadEntries().isEmpty)
+    }
 }

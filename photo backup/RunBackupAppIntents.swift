@@ -51,7 +51,16 @@ struct RunBackupToLastFolderIntent: AppIntent {
     static var isDiscoverable: Bool = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        let activityLog = ActivityLogStore()
+
         guard await ensurePhotoLibraryReadWriteAccess() else {
+            activityLog.append(
+                ActivityLogEntry(
+                    kind: .backupFailed,
+                    summary: "Shortcuts backup blocked",
+                    detail: "Photo library access was not granted."
+                )
+            )
             throw RunBackupIntentError.photoAccessDenied
         }
 
@@ -60,40 +69,68 @@ struct RunBackupToLastFolderIntent: AppIntent {
         guard let folderURL = BackupBookmarkResolver.resolvedBackupFolderURL(state: &state, store: store) else {
             return .result(
                 dialog: IntentDialog(
-                    "No backup folder is saved. Open Archive Angel, tap “Select backup folder,” then try this shortcut again."
+                    "No backup folder is saved. Open Archive Angel, tap “Choose backup folder,” then try this shortcut again."
                 )
             )
         }
 
         let manager = BackupManager()
-        let outcome: BackupOutcome = try await withCheckedThrowingContinuation { continuation in
-            manager.startBackup(
-                backupFolderURL: folderURL,
-                includePhotos: state.includePhotos,
-                includeVideos: state.includeVideos,
-                includeLivePhotosAsVideo: state.includeLivePhotosAsVideo,
-                showThumbnail: state.showThumbnail,
-                isCanceled: { false },
-                onProgress: { _, _, _ in },
-                onThumbnail: { _ in },
-                completion: { result in
-                    switch result {
-                    case .success(let value):
-                        continuation.resume(returning: value)
-                    case .failure(let error):
-                        continuation.resume(throwing: error)
+        let outcome: BackupOutcome
+        do {
+            outcome = try await withCheckedThrowingContinuation { continuation in
+                manager.startBackup(
+                    backupFolderURL: folderURL,
+                    includePhotos: state.includePhotos,
+                    includeVideos: state.includeVideos,
+                    includeLivePhotosAsVideo: state.includeLivePhotosAsVideo,
+                    showThumbnail: state.showThumbnail,
+                    isCanceled: { false },
+                    onProgress: { _, _, _ in },
+                    onThumbnail: { _ in },
+                    completion: { result in
+                        switch result {
+                        case .success(let value):
+                            continuation.resume(returning: value)
+                        case .failure(let error):
+                            continuation.resume(throwing: error)
+                        }
                     }
-                }
+                )
+            }
+        } catch {
+            activityLog.append(
+                ActivityLogEntry(
+                    kind: .backupFailed,
+                    summary: "Shortcuts backup failed",
+                    detail: error.localizedDescription
+                )
             )
+            throw error
         }
 
         if outcome.canceled {
+            activityLog.append(
+                ActivityLogEntry(
+                    kind: .backupCanceled,
+                    summary: "Shortcuts backup did not finish",
+                    detail: nil
+                )
+            )
             return .result(dialog: IntentDialog("Backup did not finish."))
         }
 
         state.totalBackupSize = outcome.totalSizeBytes
         state.lastBackupDate = Date()
         store.save(state)
+
+        activityLog.append(
+            ActivityLogEntry(
+                kind: .shortcutBackupCompleted,
+                summary: "Shortcuts backup finished",
+                detail:
+                    "Wrote \(outcome.filesWritten) file(s); \(outcome.totalItemsInFolder) item(s) in folder."
+            )
+        )
 
         NotificationCenter.default.post(name: .archiveAngelPersistentStateDidChange, object: nil)
 

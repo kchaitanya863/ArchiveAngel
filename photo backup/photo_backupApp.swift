@@ -13,7 +13,7 @@ struct photo_backupApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ArchiveAngelRootView()
                 .environmentObject(viewModel)
         }
     }

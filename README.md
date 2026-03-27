@@ -13,6 +13,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 - **Clear folder** — Removes **contents** of the backup folder only (keeps the folder node and security-scoped access pattern).
 - **Duplicate photos** — Scans **images only** (SHA-256 of image data); videos are not scanned. After a scan, you confirm before anything is deleted from the library.
 - **Siri & Shortcuts (iOS 16+)** — App Intent **“Run backup to last folder”** opens the app and runs the same backup as the in-app button, using your saved folder bookmark and settings. Find it under the app in Shortcuts, or say e.g. “Run backup in Archive Angel” (phrase depends on your app display name).
+- **History tab** — Overview of total backup size, last backup time, and counts from the log; chronological **activity log** (backups, folder changes, clears, duplicate scans/deletes, Shortcuts runs). Stored under `ArchiveAngel/activity_log.json` (newest first, capped). You can clear the log without touching files or settings.
 
 ## Requirements
 
@@ -24,12 +25,13 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 
 | Area | Location |
 |------|----------|
-| UI | `photo backup/ContentView.swift` |
+| UI | `photo backup/ArchiveAngelRootView.swift` (tabs), `ContentView.swift`, `HistoryView.swift` |
 | View model | `photo backup/ArchiveAngelViewModel.swift` |
 | Backup / clear folder | `photo backup/BackupManager.swift` |
 | Dedup scan + delete | `photo backup/DeduplicationManager.swift` |
 | Filenames & progress helpers | `photo backup/BackupNaming.swift`, `BackupProgressMath` |
 | Persistent JSON state | `photo backup/AppPersistentState.swift`, `AppStateStore.swift` |
+| Activity log | `photo backup/ActivityLogEntry.swift`, `ActivityLogStore.swift` |
 | Document folder picker | `photo backup/DocumentPicker.swift` |
 | Shortcuts (App Intents) | `photo backup/RunBackupAppIntents.swift`, `BackupBookmarkResolver.swift` |
 | Unit tests | `photo backupTests/ArchiveAngelCoreTests.swift` |

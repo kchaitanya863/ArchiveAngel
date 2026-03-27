@@ -11,6 +11,7 @@ Use this file when editing or reviewing this repository in an automated or assis
 
 - **`ArchiveAngelViewModel`** (`@MainActor`) holds UI state, talks to `BackupManager` / `DeduplicationManager`, and persists via **`AppStateStore`**.
 - **On-disk state:** `Application Support/ArchiveAngel/app_state.json` via `AppPersistentState`. Legacy `UserDefaults` keys are migrated once by `AppStateStore`.
+- **Activity log:** `Application Support/ArchiveAngel/activity_log.json` via **`ActivityLogStore`** (newest-first, capped ~400 entries). **`HistoryView`** tab; **`ArchiveAngelViewModel.recordActivity`** (private) and Shortcuts intent append events. **`archiveAngelActivityLogDidChange`** refreshes the list when the log changes off the main flow.
 - **Backup folder:** Stored as **bookmark `Data`** in `AppPersistentState`. On iOS, use **empty bookmark options** `[]` for create/resolve — **not** `.withSecurityScope` on `URL` (unavailable on iOS in Swift). Always use `startAccessingSecurityScopedResource()` / `stopAccessingSecurityScopedResource()` around file access on the resolved URL where appropriate (`BackupManager` wraps backup/clear).
 - **Naming:** `BackupNaming` builds paths from `PHAssetResource` filenames plus a sanitized id prefix; **`BackupNaming.isAssetBackedUp`** also checks a **legacy** filename pattern for older backups.
 - **Dedup:** **`DeduplicationManager`** scans **images only**; flow is scan → confirm dialog → delete. Do not silently delete.

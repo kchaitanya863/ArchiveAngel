@@ -35,14 +35,27 @@ final class ArchiveAngelViewModel: ObservableObject {
     @Published var totalMissingPhotosCount = 0
     @Published var totalMissingVideosCount = 0
 
+    @Published private(set) var activityLogEntries: [ActivityLogEntry] = []
+
     private let store: AppStateStore
+    private let activityLogStore: ActivityLogStore
     private let backupManager = BackupManager()
     private let deduplicationManager = DeduplicationManager()
     private var persistentStateObserver: NSObjectProtocol?
+    private var activityLogObserver: NSObjectProtocol?
 
-    init(store: AppStateStore = AppStateStore()) {
+    /// Backups that finished successfully (in-app or Shortcuts), derived from the log.
+    var completedBackupLogCount: Int {
+        activityLogEntries.filter {
+            $0.kind == .backupCompleted || $0.kind == .shortcutBackupCompleted
+        }.count
+    }
+
+    init(store: AppStateStore = AppStateStore(), activityLogStore: ActivityLogStore = ActivityLogStore()) {
         self.store = store
+        self.activityLogStore = activityLogStore
         self.state = store.load()
+        self.activityLogEntries = activityLogStore.loadEntries()
         persistentStateObserver = NotificationCenter.default.addObserver(
             forName: .archiveAngelPersistentStateDidChange,
             object: nil,
@@ -52,12 +65,36 @@ final class ArchiveAngelViewModel: ObservableObject {
                 self?.reloadPersistentStateFromDisk()
             }
         }
+        activityLogObserver = NotificationCenter.default.addObserver(
+            forName: .archiveAngelActivityLogDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshActivityLog()
+            }
+        }
     }
 
     deinit {
         if let persistentStateObserver {
             NotificationCenter.default.removeObserver(persistentStateObserver)
         }
+        if let activityLogObserver {
+            NotificationCenter.default.removeObserver(activityLogObserver)
+        }
+    }
+
+    func refreshActivityLog() {
+        activityLogEntries = activityLogStore.loadEntries()
+    }
+
+    func clearActivityLog() {
+        activityLogStore.clearAll()
+    }
+
+    private func recordActivity(kind: ActivityLogKind, summary: String, detail: String? = nil) {
+        activityLogStore.append(ActivityLogEntry(kind: kind, summary: summary, detail: detail))
     }
 
     private func reloadPersistentStateFromDisk() {
@@ -128,6 +165,11 @@ final class ArchiveAngelViewModel: ObservableObject {
             url.stopAccessingSecurityScopedResource()
             folderBookmarkStaleNotice = nil
             refreshMissingCounts()
+            recordActivity(
+                kind: .folderChanged,
+                summary: "Backup folder set to “\(url.lastPathComponent)”",
+                detail: nil
+            )
         } catch {
             alert = .init(title: "Folder error", message: error.localizedDescription)
         }
@@ -213,8 +255,19 @@ final class ArchiveAngelViewModel: ObservableObject {
                     self.state.lastBackupDate = Date()
                     self.persist()
                     if outcome.canceled {
+                        self.recordActivity(
+                            kind: .backupCanceled,
+                            summary: "Backup canceled",
+                            detail: "Stopped before completion."
+                        )
                         self.alert = .init(title: "Backup canceled", message: "The backup was stopped before completion.")
                     } else {
+                        self.recordActivity(
+                            kind: .backupCompleted,
+                            summary: "Backup finished",
+                            detail:
+                                "Wrote \(outcome.filesWritten) file(s); \(outcome.totalItemsInFolder) item(s) in folder."
+                        )
                         self.alert = .init(
                             title: "Backup complete",
                             message:
@@ -223,6 +276,11 @@ final class ArchiveAngelViewModel: ObservableObject {
                     }
                     self.refreshMissingCounts()
                 case .failure(let error):
+                    self.recordActivity(
+                        kind: .backupFailed,
+                        summary: "Backup failed",
+                        detail: error.localizedDescription
+                    )
                     self.alert = .init(title: "Backup failed", message: error.localizedDescription)
                 }
             }
@@ -252,12 +310,22 @@ final class ArchiveAngelViewModel: ObservableObject {
             case .success(let removed):
                 self.state.totalBackupSize = 0
                 self.persist()
+                self.recordActivity(
+                    kind: .folderCleared,
+                    summary: "Cleared backup folder",
+                    detail: "Removed \(removed) item(s)."
+                )
                 self.alert = .init(
                     title: "Folder cleared",
                     message: "Removed \(removed) item(s) from the backup folder."
                 )
                 self.refreshMissingCounts()
             case .failure(let error):
+                self.recordActivity(
+                    kind: .folderClearFailed,
+                    summary: "Could not clear folder",
+                    detail: error.localizedDescription
+                )
                 self.alert = .init(title: "Could not clear folder", message: error.localizedDescription)
             }
         }
@@ -292,14 +360,34 @@ final class ArchiveAngelViewModel: ObservableObject {
                     case .success(let ids):
                         self.scannedDuplicateLocalIds = ids
                         if ids.isEmpty {
+                            self.recordActivity(
+                                kind: .dedupNoDuplicates,
+                                summary: "Duplicate scan: none found",
+                                detail: nil
+                            )
                             self.alert = .init(title: "No duplicates found", message: "No duplicate photos were detected.")
                         } else {
+                            self.recordActivity(
+                                kind: .dedupDuplicatesFound,
+                                summary: "Found \(ids.count) duplicate photo(s)",
+                                detail: "Awaiting confirmation to remove from library."
+                            )
                             self.activeDialog = .deleteDuplicates
                         }
                     case .failure(let error):
                         if error is CancellationError {
+                            self.recordActivity(
+                                kind: .dedupScanCanceled,
+                                summary: "Duplicate scan canceled",
+                                detail: nil
+                            )
                             self.alert = .init(title: "Scan canceled", message: "Duplicate scan was stopped.")
                         } else {
+                            self.recordActivity(
+                                kind: .dedupScanFailed,
+                                summary: "Duplicate scan failed",
+                                detail: error.localizedDescription
+                            )
                             self.alert = .init(title: "Scan failed", message: error.localizedDescription)
                         }
                     }
@@ -329,12 +417,22 @@ final class ArchiveAngelViewModel: ObservableObject {
                 self.dedupMessage = ""
                 switch result {
                 case .success(let count):
+                    self.recordActivity(
+                        kind: .dedupDeleted,
+                        summary: "Removed \(count) duplicate photo(s)",
+                        detail: "Videos were not changed."
+                    )
                     self.alert = .init(
                         title: "Duplicates removed",
                         message: "Removed \(count) duplicate photo(s). Videos are never changed."
                     )
                     self.refreshMediaCounts()
                 case .failure(let error):
+                    self.recordActivity(
+                        kind: .dedupDeleteFailed,
+                        summary: "Deleting duplicates failed",
+                        detail: error.localizedDescription
+                    )
                     self.alert = .init(title: "Delete failed", message: error.localizedDescription)
                 }
             }
