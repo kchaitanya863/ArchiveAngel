@@ -156,20 +156,62 @@ final class ArchiveAngelCoreTests: XCTestCase {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        let store = ActivityLogStore(storageDirectory: dir, maxEntries: 3)
+        let store = ActivityLogStore(storageDirectory: dir, maxEntries: 50)
         XCTAssertTrue(store.loadEntries().isEmpty)
 
-        store.append(ActivityLogEntry(kind: .folderChanged, summary: "One"))
-        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Two"))
-        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Three"))
-        store.append(ActivityLogEntry(kind: .folderChanged, summary: "Four"))
+        let base = Date(timeIntervalSince1970: 1_700_000_000)
+        for i in 0...50 {
+            store.append(
+                ActivityLogEntry(
+                    date: base.addingTimeInterval(TimeInterval(i)),
+                    kind: .folderChanged,
+                    summary: "entry-\(i)"
+                )
+            )
+        }
 
         let entries = store.loadEntries()
-        XCTAssertEqual(entries.count, 3)
-        XCTAssertTrue(entries.contains { $0.summary == "Four" })
-        XCTAssertFalse(entries.contains { $0.summary == "One" })
+        XCTAssertEqual(entries.count, 50)
+        XCTAssertTrue(entries.contains { $0.summary == "entry-50" })
+        XCTAssertFalse(entries.contains { $0.summary == "entry-0" })
 
         store.clearAll()
         XCTAssertTrue(store.loadEntries().isEmpty)
+    }
+
+    func testDiskSpaceAssess() {
+        XCTAssertEqual(BackupDiskSpaceEstimator.assess(freeBytes: nil, neededBytes: 100), .unknownFreeSpace)
+        XCTAssertEqual(BackupDiskSpaceEstimator.assess(freeBytes: 500, neededBytes: 0), .sufficient)
+        XCTAssertEqual(
+            BackupDiskSpaceEstimator.assess(freeBytes: 500, neededBytes: 900),
+            .insufficient(shortByBytes: 400)
+        )
+
+        let needed: Int64 = 200_000_000
+        let free: Int64 = needed + 50_000_000
+        if case .tightRemaining = BackupDiskSpaceEstimator.assess(freeBytes: free, neededBytes: needed) {
+            // headroom 50MB is below minHeadroom (100MB)
+        } else {
+            XCTFail("Expected tightRemaining")
+        }
+    }
+
+    func testFallbackEstimatedAssetBytesHeuristic() {
+        let video = BackupDiskSpaceEstimator.fallbackEstimatedAssetBytes(
+            mediaType: .video,
+            pixelWidth: 0,
+            pixelHeight: 0,
+            durationSeconds: 2
+        )
+        XCTAssertGreaterThan(video, 5_000_000)
+
+        let image = BackupDiskSpaceEstimator.fallbackEstimatedAssetBytes(
+            mediaType: .image,
+            pixelWidth: 2000,
+            pixelHeight: 1500,
+            durationSeconds: 0
+        )
+        XCTAssertGreaterThan(image, 100_000)
+        XCTAssertLessThanOrEqual(image, 40_000_000)
     }
 }

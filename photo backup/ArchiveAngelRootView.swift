@@ -61,6 +61,20 @@ struct ArchiveAngelRootView: View {
         } message: {
             Text("One copy of each matching image is kept. Videos are not scanned. This cannot be undone.")
         }
+        .confirmationDialog(
+            "Low disk space",
+            isPresented: lowDiskSpaceBackupDialogPresented,
+            titleVisibility: .visible
+        ) {
+            Button("Back up anyway") {
+                viewModel.confirmBackupDespiteLowDiskSpace()
+            }
+            Button("Cancel", role: .cancel) {
+                viewModel.activeDialog = nil
+            }
+        } message: {
+            lowDiskSpaceBackupMessage
+        }
     }
 
     private var alertItemBinding: Binding<ArchiveAngelAlert?> {
@@ -93,6 +107,36 @@ struct ArchiveAngelRootView: View {
                 if !new { viewModel.cancelDuplicateDeletionDialog() }
             }
         )
+    }
+
+    private var lowDiskSpaceBackupDialogPresented: Binding<Bool> {
+        Binding(
+            get: {
+                if case .lowDiskSpaceBackup = viewModel.activeDialog { return true }
+                return false
+            },
+            set: { new in
+                if !new {
+                    if case .lowDiskSpaceBackup = viewModel.activeDialog {
+                        viewModel.activeDialog = nil
+                    }
+                }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var lowDiskSpaceBackupMessage: some View {
+        switch viewModel.activeDialog {
+        case let .lowDiskSpaceBackup(freeBytes, neededBytes):
+            let freeFormatted = ByteCountFormatter.string(fromByteCount: freeBytes, countStyle: .file)
+            let neededFormatted = ByteCountFormatter.string(fromByteCount: neededBytes, countStyle: .file)
+            Text(
+                "About \(freeFormatted) free; new items are estimated around \(neededFormatted). The export may stop if the disk fills. Continue?"
+            )
+        default:
+            Text("")
+        }
     }
 }
 

@@ -97,7 +97,6 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 ### Trust, clarity & polish
 
 - **Dry-run** — “Would copy N, skip M” without writing (or write to a temp sandbox).
-- **Disk space estimate** — Rough required space before starting; warn when the destination is low.
 - **Export / onboarding copy** — Short first-run flow: permissions → folder → what “clear folder” vs “delete from library” means.
 - **Localization** — `Localizable.strings` (or string catalogs) for non-English users.
 - **Accessibility** — Full VoiceOver pass, Dynamic Type, and larger hit targets on destructive actions.
@@ -112,6 +111,7 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 ### Already in the app (for context)
 
 - Shortcuts intent **Run backup to last folder**, **History** tab with activity log, **Change** backup folder when one is already set, and file-backed **state** + **activity** JSON under Application Support.
+- **Disk space** — Rough size estimate for items not yet in the backup folder, destination free space when readable, on-screen warnings when space looks tight or too small, and a confirmation sheet before starting when the estimate exceeds free space.
 
 ## Contributing
 

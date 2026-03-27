@@ -21,6 +21,7 @@ struct ContentView: View {
                 heroSection
                 chooseBackupFolderCallout
                 libraryStatsSection
+                diskSpaceSection
                 settingsHintRow
                 backupMetadataSection
                 primaryBackupButton
@@ -126,6 +127,82 @@ struct ContentView: View {
 
     private var missingCountsAccessibilityLabel: String {
         "Missing from backup: \(viewModel.totalMissingPhotosCount) photos, \(viewModel.totalMissingVideosCount) videos"
+    }
+
+    @ViewBuilder private var diskSpaceSection: some View {
+        if viewModel.state.backupFolderBookmark != nil {
+            VStack(alignment: .leading, spacing: 6) {
+                if viewModel.diskSpaceNeededForMissingBytes > 0 {
+                    Text(diskSpaceNeededLabel)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .accessibilityLabel(diskSpaceNeededAccessibilityLabel)
+                }
+                Text(diskSpaceFreeLabel)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .accessibilityLabel(diskSpaceFreeAccessibilityLabel)
+                if let warning = diskSpaceWarningText {
+                    Text(warning)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(warning)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+        }
+    }
+
+    private var diskSpaceNeededLabel: String {
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
+            countStyle: .file
+        )
+        return "Rough space for new items: \(formatted) (approximate)"
+    }
+
+    private var diskSpaceNeededAccessibilityLabel: String {
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
+            countStyle: .file
+        )
+        return "Rough space needed for items not yet backed up: about \(formatted). This is approximate."
+    }
+
+    private var diskSpaceFreeLabel: String {
+        if let free = viewModel.diskSpaceDestinationFreeBytes {
+            let formatted = ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
+            return "Destination free space: \(formatted)"
+        }
+        return "Destination free space: unavailable"
+    }
+
+    private var diskSpaceFreeAccessibilityLabel: String {
+        if let free = viewModel.diskSpaceDestinationFreeBytes {
+            let formatted = ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
+            return "Free space on the backup destination: about \(formatted)"
+        }
+        return "Free space on the backup destination could not be read."
+    }
+
+    private var diskSpaceWarningText: String? {
+        switch viewModel.diskSpaceAssessment {
+        case .tightRemaining(let headroom):
+            let hf = ByteCountFormatter.string(fromByteCount: headroom, countStyle: .file)
+            return "Low space: only about \(hf) would remain after the estimate. Consider freeing room or using another folder."
+        case .insufficient(let shortBy):
+            let sf = ByteCountFormatter.string(fromByteCount: shortBy, countStyle: .file)
+            return "Not enough free space for the rough estimate (short by about \(sf)). You can still try to back up."
+        case .unknownFreeSpace:
+            if viewModel.diskSpaceNeededForMissingBytes > 0 {
+                return "Could not read free space for this location; the estimate may not match what the Files provider reports."
+            }
+            return nil
+        default:
+            return nil
+        }
     }
 
     @ViewBuilder private var backupMetadataSection: some View {

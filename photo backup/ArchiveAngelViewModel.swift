@@ -2,11 +2,18 @@ import Foundation
 import Photos
 import UIKit
 
-enum ArchiveAngelDialog: String, Identifiable {
+enum ArchiveAngelDialog: Identifiable, Equatable {
     case clearFolder
     case deleteDuplicates
+    case lowDiskSpaceBackup(freeBytes: Int64, neededBytes: Int64)
 
-    var id: String { rawValue }
+    var id: String {
+        switch self {
+        case .clearFolder: return "clearFolder"
+        case .deleteDuplicates: return "deleteDuplicates"
+        case .lowDiskSpaceBackup: return "lowDiskSpaceBackup"
+        }
+    }
 }
 
 @MainActor
@@ -34,6 +41,10 @@ final class ArchiveAngelViewModel: ObservableObject {
     @Published var totalVideosCount = 0
     @Published var totalMissingPhotosCount = 0
     @Published var totalMissingVideosCount = 0
+
+    @Published private(set) var diskSpaceNeededForMissingBytes: Int64 = 0
+    @Published private(set) var diskSpaceDestinationFreeBytes: Int64?
+    @Published private(set) var diskSpaceAssessment: BackupDiskSpaceEstimator.Assessment = .sufficient
 
     @Published private(set) var activityLogEntries: [ActivityLogEntry] = []
 
@@ -201,31 +212,57 @@ final class ArchiveAngelViewModel: ObservableObject {
         guard let url = resolvedBackupFolderURL() else {
             totalMissingPhotosCount = 0
             totalMissingVideosCount = 0
+            diskSpaceNeededForMissingBytes = 0
+            diskSpaceDestinationFreeBytes = nil
+            diskSpaceAssessment = .sufficient
             return
         }
-        guard url.startAccessingSecurityScopedResource() else { return }
-        defer { url.stopAccessingSecurityScopedResource() }
 
-        var missingPhotos = 0
-        var missingVideos = 0
-        let fetchOptions = PHFetchOptions()
-        let assets = PHAsset.fetchAssets(with: fetchOptions)
-        assets.enumerateObjects { [self] asset, _, _ in
-            if asset.mediaType == .image && !self.state.includePhotos { return }
-            if asset.mediaType == .video && !self.state.includeVideos { return }
-            if BackupNaming.isAssetBackedUp(
-                asset: asset,
-                directory: url,
-                layout: self.state.backupFolderLayout,
-                naming: self.state.backupFileNaming
-            ) {
-                return
+        let layout = state.backupFolderLayout
+        let naming = state.backupFileNaming
+        let includePhotos = state.includePhotos
+        let includeVideos = state.includeVideos
+        let includeLive = state.includeLivePhotosAsVideo
+
+        DispatchQueue.global(qos: .utility).async {
+            guard url.startAccessingSecurityScopedResource() else { return }
+            defer { url.stopAccessingSecurityScopedResource() }
+
+            var missingPhotos = 0
+            var missingVideos = 0
+            var estimatedBytes: Int64 = 0
+            let fetchOptions = PHFetchOptions()
+            let assets = PHAsset.fetchAssets(with: fetchOptions)
+            assets.enumerateObjects { asset, _, _ in
+                if asset.mediaType == .image && !includePhotos { return }
+                if asset.mediaType == .video && !includeVideos { return }
+                if BackupNaming.isAssetBackedUp(
+                    asset: asset,
+                    directory: url,
+                    layout: layout,
+                    naming: naming
+                ) {
+                    return
+                }
+                if asset.mediaType == .image { missingPhotos += 1 }
+                else if asset.mediaType == .video { missingVideos += 1 }
+                estimatedBytes += BackupDiskSpaceEstimator.estimatedExportBytes(
+                    for: asset,
+                    includeLivePhotosAsVideo: includeLive
+                )
             }
-            if asset.mediaType == .image { missingPhotos += 1 }
-            else if asset.mediaType == .video { missingVideos += 1 }
+
+            let freeBytes = BackupDiskSpaceEstimator.volumeAvailableCapacityBytes(forContainingItemAt: url)
+            let assessment = BackupDiskSpaceEstimator.assess(freeBytes: freeBytes, neededBytes: estimatedBytes)
+
+            Task { @MainActor in
+                self.totalMissingPhotosCount = missingPhotos
+                self.totalMissingVideosCount = missingVideos
+                self.diskSpaceNeededForMissingBytes = estimatedBytes
+                self.diskSpaceDestinationFreeBytes = freeBytes
+                self.diskSpaceAssessment = assessment
+            }
         }
-        totalMissingPhotosCount = missingPhotos
-        totalMissingVideosCount = missingVideos
     }
 
     // MARK: - Backup
@@ -236,6 +273,26 @@ final class ArchiveAngelViewModel: ObservableObject {
             return
         }
 
+        if case .insufficient = diskSpaceAssessment,
+           let free = diskSpaceDestinationFreeBytes,
+           diskSpaceNeededForMissingBytes > 0 {
+            activeDialog = .lowDiskSpaceBackup(freeBytes: free, neededBytes: diskSpaceNeededForMissingBytes)
+            return
+        }
+
+        beginBackup(to: folderURL)
+    }
+
+    func confirmBackupDespiteLowDiskSpace() {
+        activeDialog = nil
+        guard let folderURL = resolvedBackupFolderURL() else {
+            alert = .init(title: "No folder selected", message: "Please select a folder to back up your photos.")
+            return
+        }
+        beginBackup(to: folderURL)
+    }
+
+    private func beginBackup(to folderURL: URL) {
         isBackupInProgress = true
         backupProgress = 0
         cancelBackupRequested = false

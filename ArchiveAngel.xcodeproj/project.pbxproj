@@ -21,6 +21,7 @@
 		7AF010102B0302CE00AE2376 /* AppPersistentState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010202B0302CE00AE2376 /* AppPersistentState.swift */; };
 		7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010212B0302CE00AE2376 /* AppStateStore.swift */; };
 		7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010222B0302CE00AE2376 /* BackupNaming.swift */; };
+		7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */; };
 		7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */; };
 		7AF010132B0302CE00AE2376 /* CryptoHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */; };
 		7AF010142B0302CE00AE2376 /* ArchiveAngelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */; };
@@ -70,6 +71,7 @@
 		7AF010202B0302CE00AE2376 /* AppPersistentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPersistentState.swift; sourceTree = "<group>"; };
 		7AF010212B0302CE00AE2376 /* AppStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateStore.swift; sourceTree = "<group>"; };
 		7AF010222B0302CE00AE2376 /* BackupNaming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupNaming.swift; sourceTree = "<group>"; };
+		7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDiskSpaceEstimator.swift; sourceTree = "<group>"; };
 		7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOutputSettings.swift; sourceTree = "<group>"; };
 		7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoHelpers.swift; sourceTree = "<group>"; };
 		7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelViewModel.swift; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 				7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */,
 				7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */,
 				7AF010222B0302CE00AE2376 /* BackupNaming.swift */,
+				7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */,
 				7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */,
 				7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */,
 				7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */,
@@ -317,6 +320,7 @@
 				7AF010102B0302CE00AE2376 /* AppPersistentState.swift in Sources */,
 				7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */,
 				7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */,
+				7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */,
 				7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */,
 				7AF010132B0302CE00AE2376 /* CryptoHelpers.swift in Sources */,
 				7AF010142B0302CE00AE2376 /* ArchiveAngelViewModel.swift in Sources */,
