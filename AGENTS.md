@@ -14,6 +14,7 @@ Use this file when editing or reviewing this repository in an automated or assis
 - **Backup folder:** Stored as **bookmark `Data`** in `AppPersistentState`. On iOS, use **empty bookmark options** `[]` for create/resolve — **not** `.withSecurityScope` on `URL` (unavailable on iOS in Swift). Always use `startAccessingSecurityScopedResource()` / `stopAccessingSecurityScopedResource()` around file access on the resolved URL where appropriate (`BackupManager` wraps backup/clear).
 - **Naming:** `BackupNaming` builds paths from `PHAssetResource` filenames plus a sanitized id prefix; **`BackupNaming.isAssetBackedUp`** also checks a **legacy** filename pattern for older backups.
 - **Dedup:** **`DeduplicationManager`** scans **images only**; flow is scan → confirm dialog → delete. Do not silently delete.
+- **Shortcuts:** **`RunBackupToLastFolderIntent`** (`RunBackupAppIntents.swift`, iOS 16+) uses **`BackupBookmarkResolver`** + **`BackupManager`** and **`AppStateStore`**. It sets **`openAppWhenRun = true`** so the backup runs in the foreground. On success it saves state and posts **`Notification.Name.archiveAngelPersistentStateDidChange`** so **`ArchiveAngelViewModel`** reloads from disk.
 
 ## Constraints for changes
 
@@ -21,6 +22,7 @@ Use this file when editing or reviewing this repository in an automated or assis
 - New Swift files must be added to **`ArchiveAngel.xcodeproj/project.pbxproj`** (Sources + group).
 - **Tests:** Pure logic belongs in testable helpers (`BackupProgressMath`, `BackupNaming.sanitizeFilename`, `CryptoHelpers`, `AppPersistentState` / `AppStateStore`). Run **`photo backupTests`** after non-trivial changes.
 - **Info.plist:** Merged from `photo-backup-Info.plist` and generated keys; keep `NSPhotoLibraryUsageDescription` accurate if behavior changes.
+- **App Intents:** New intents must be registered via `AppShortcutsProvider` (or equivalent) and compile with the **Archive Angel** target so `appintentsmetadataprocessor` runs. Keep intent titles/phrases user-facing and accurate.
 
 ## Build / test commands
 

@@ -38,10 +38,32 @@ final class ArchiveAngelViewModel: ObservableObject {
     private let store: AppStateStore
     private let backupManager = BackupManager()
     private let deduplicationManager = DeduplicationManager()
+    private var persistentStateObserver: NSObjectProtocol?
 
     init(store: AppStateStore = AppStateStore()) {
         self.store = store
         self.state = store.load()
+        persistentStateObserver = NotificationCenter.default.addObserver(
+            forName: .archiveAngelPersistentStateDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.reloadPersistentStateFromDisk()
+            }
+        }
+    }
+
+    deinit {
+        if let persistentStateObserver {
+            NotificationCenter.default.removeObserver(persistentStateObserver)
+        }
+    }
+
+    private func reloadPersistentStateFromDisk() {
+        state = store.load()
+        refreshMediaCounts()
+        refreshMissingCounts()
     }
 
     // MARK: - Persistence
@@ -65,29 +87,27 @@ final class ArchiveAngelViewModel: ObservableObject {
 
     // MARK: - Backup folder
 
+    /// Resolves the saved folder URL. Mutations to `state` (e.g. clearing a stale bookmark) are applied asynchronously
+    /// so this stays safe when called from SwiftUI view bodies (e.g. via `backupFolderDisplayName`).
     func resolvedBackupFolderURL() -> URL? {
-        guard let data = state.backupFolderBookmark else { return nil }
-        var stale = false
-        // Security-scoped bookmarks from the document picker resolve with default options on iOS
-        // (.withSecurityScope is macOS-only in Swift's URL API).
-        guard
-            let url = try? URL(
-                resolvingBookmarkData: data,
-                options: [],
-                relativeTo: nil,
-                bookmarkDataIsStale: &stale
-            )
-        else {
-            state.backupFolderBookmark = nil
-            persist()
-            folderBookmarkStaleNotice = "Could not open the saved backup folder. Please choose it again."
+        var working = state
+        let hadBookmark = working.backupFolderBookmark != nil
+        guard let url = BackupBookmarkResolver.resolvedBackupFolderURL(state: &working, store: store) else {
+            if working != state {
+                let showStaleNotice = hadBookmark && working.backupFolderBookmark == nil
+                Task { @MainActor in
+                    self.state = working
+                    if showStaleNotice {
+                        self.folderBookmarkStaleNotice =
+                            "The backup folder could not be opened or its reference expired. Please select the folder again."
+                    }
+                    self.refreshMissingCounts()
+                }
+            }
             return nil
         }
-        if stale {
-            state.backupFolderBookmark = nil
-            persist()
-            folderBookmarkStaleNotice = "The backup folder reference expired. Please select the folder again."
-            return nil
+        if working != state {
+            Task { @MainActor in self.state = working }
         }
         return url
     }

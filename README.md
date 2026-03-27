@@ -12,10 +12,11 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 - **State on disk** — Preferences and backup stats live in Application Support as JSON (`ArchiveAngel/app_state.json`), with a one-time migration from legacy `UserDefaults` keys.
 - **Clear folder** — Removes **contents** of the backup folder only (keeps the folder node and security-scoped access pattern).
 - **Duplicate photos** — Scans **images only** (SHA-256 of image data); videos are not scanned. After a scan, you confirm before anything is deleted from the library.
+- **Siri & Shortcuts (iOS 16+)** — App Intent **“Run backup to last folder”** opens the app and runs the same backup as the in-app button, using your saved folder bookmark and settings. Find it under the app in Shortcuts, or say e.g. “Run backup in Archive Angel” (phrase depends on your app display name).
 
 ## Requirements
 
-- **iOS / iPadOS 15.0+**
+- **iOS / iPadOS 15.0+** to run the app; **iOS / iPadOS 16+** for Shortcuts / App Intents discovery.
 - **Xcode 15+** (project last built with Xcode 15+ toolchains)
 - **Swift 5**
 
@@ -30,6 +31,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 | Filenames & progress helpers | `photo backup/BackupNaming.swift`, `BackupProgressMath` |
 | Persistent JSON state | `photo backup/AppPersistentState.swift`, `AppStateStore.swift` |
 | Document folder picker | `photo backup/DocumentPicker.swift` |
+| Shortcuts (App Intents) | `photo backup/RunBackupAppIntents.swift`, `BackupBookmarkResolver.swift` |
 | Unit tests | `photo backupTests/ArchiveAngelCoreTests.swift` |
 
 Swift **module name** for the app target is `photo_backup` (see `PRODUCT_MODULE_NAME` in Xcode).
@@ -57,6 +59,7 @@ Adjust the simulator name to one installed on your Mac (`xcodebuild -showdestina
 2. **Back up library** — Exports according to toggles (photos, videos, Live Photo as video, thumbnail).
 3. **Clear folder contents** — Confirms, then deletes files inside that folder only.
 4. **Scan for duplicate photos** — When finished, review the confirmation; **Delete** removes duplicate library assets (keeps one copy per identical image).
+5. **Shortcuts** — After you have chosen a backup folder once in the app, add **Run backup to last folder** from the Shortcuts app (App Library → Archive Angel) or Siri. The shortcut requests photo access if needed and shows a summary when the run finishes.
 
 ## Privacy
 

@@ -13,6 +13,15 @@ enum BackupManagerError: Error {
     case securityScopeDenied
 }
 
+extension BackupManagerError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .securityScopeDenied:
+            return "Could not access the backup folder. Open Archive Angel and select the folder again."
+        }
+    }
+}
+
 final class BackupManager {
 
     /// Counts library assets that would be considered for backup given include flags.
