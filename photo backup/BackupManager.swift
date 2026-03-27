@@ -1,133 +1,194 @@
+import AVFoundation
 import Photos
-import SwiftUI
 import UIKit
 
-class BackupManager {
-    func startBackupProcess(
-        backupFolderURL: URL?,
+struct BackupOutcome {
+    let filesWritten: Int
+    let canceled: Bool
+    let totalSizeBytes: Int64
+    let totalItemsInFolder: Int
+}
+
+enum BackupManagerError: Error {
+    case securityScopeDenied
+}
+
+extension BackupManagerError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .securityScopeDenied:
+            return "Could not access the backup folder. Open Archive Angel and select the folder again."
+        }
+    }
+}
+
+final class BackupManager {
+
+    func startBackup(
+        backupFolderURL: URL,
         includePhotos: Bool,
         includeVideos: Bool,
         includeLivePhotosAsVideo: Bool,
         showThumbnail: Bool,
-        isBackupInProgress: Binding<Bool>,
-        backupProgress: Binding<Double>,
-        cancelBackup: Binding<Bool>,
-        currentThumbnail: Binding<UIImage?>,
-        progressMessage: Binding<String>,
-        completionMessage: Binding<String>,
-        showingAlert: Binding<Bool>,
-        totalBackupSize: Binding<Int64>,
-        lastBackupDate: Binding<Date?>
+        folderLayout: BackupFolderLayout,
+        fileNaming: BackupFileNaming,
+        backupAlbumCollectionLocalIdentifiers: [String],
+        backupIncrementalEnabled: Bool,
+        lastBackupDate: Date?,
+        isCanceled: @escaping () -> Bool,
+        onProgress: @escaping (_ processed: Int, _ total: Int, _ message: String) -> Void,
+        onThumbnail: @escaping (UIImage?) -> Void,
+        completion: @escaping (Result<BackupOutcome, Error>) -> Void
     ) {
-        guard let backupFolderURL = backupFolderURL else {
-            showingAlert.wrappedValue = true
-            completionMessage.wrappedValue = "Backup failed: No backup folder selected."
-            return
-        }
-
         guard backupFolderURL.startAccessingSecurityScopedResource() else {
-            print("Error: Unable to start accessing security-scoped resource.")
-            completionMessage.wrappedValue = "Backup failed: Unable to access selected backup folder."
-            showingAlert.wrappedValue = true
+            completion(.failure(BackupManagerError.securityScopeDenied))
             return
         }
 
-        isBackupInProgress.wrappedValue = true
-        backupProgress.wrappedValue = 0.0
-        cancelBackup.wrappedValue = false
+        let incrementalWatermark = BackupScope.effectiveIncrementalWatermark(
+            isIncrementalEnabled: backupIncrementalEnabled,
+            lastBackupDate: lastBackupDate
+        )
+        let albumMembers = BackupScope.albumMemberSet(collectionLocalIdentifiers: backupAlbumCollectionLocalIdentifiers)
+
+        var processed = 0
+        var filesWritten = 0
         var currentTotalSize: Int64 = 0
 
         DispatchQueue.global(qos: .userInitiated).async {
+            if !backupAlbumCollectionLocalIdentifiers.isEmpty, albumMembers?.isEmpty == true {
+                let folderCount =
+                    (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
+                let outcome = BackupOutcome(
+                    filesWritten: 0,
+                    canceled: false,
+                    totalSizeBytes: 0,
+                    totalItemsInFolder: folderCount
+                )
+                DispatchQueue.main.async {
+                    backupFolderURL.stopAccessingSecurityScopedResource()
+                    onThumbnail(nil)
+                    completion(.success(outcome))
+                }
+                return
+            }
+
+            let totalWork = BackupScope.countEligibleAssets(
+                includePhotos: includePhotos,
+                includeVideos: includeVideos,
+                albumCollectionLocalIdentifiers: backupAlbumCollectionLocalIdentifiers,
+                incrementalWatermark: incrementalWatermark
+            )
+
             let fetchOptions = PHFetchOptions()
-
             let assets = PHAsset.fetchAssets(with: fetchOptions)
-            let assetsCount = assets.count
-            var filesWrittenCount = 0
-
             let imageManager = PHImageManager.default()
-            let requestOptions = PHImageRequestOptions()
-            requestOptions.isSynchronous = true
 
-            assets.enumerateObjects { (asset, index, stop) in
-                if cancelBackup.wrappedValue {
+            assets.enumerateObjects { asset, _, stop in
+                if isCanceled() {
                     stop.pointee = true
                     return
                 }
 
-                if asset.mediaType == .image && !includePhotos {
+                if !BackupScope.shouldVisitAsset(
+                    asset: asset,
+                    includePhotos: includePhotos,
+                    includeVideos: includeVideos,
+                    albumMemberIds: albumMembers,
+                    incrementalWatermark: incrementalWatermark
+                ) {
                     return
                 }
 
-                if asset.mediaType == .video && !includeVideos {
-                    return
-                }
+                processed += 1
+                let fileURL = BackupNaming.backupFileURL(
+                    directory: backupFolderURL,
+                    asset: asset,
+                    layout: folderLayout,
+                    naming: fileNaming
+                )
+                let parentDir = fileURL.deletingLastPathComponent()
+                try? FileManager.default.createDirectory(
+                    at: parentDir,
+                    withIntermediateDirectories: true
+                )
 
-                let filename = asset.value(forKey: "filename") as? String ?? "unknown"
-                let fileURL = backupFolderURL.appendingPathComponent(
-                    asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + filename)
+                let isBackedUp = BackupNaming.isAssetBackedUp(
+                    asset: asset,
+                    directory: backupFolderURL,
+                    layout: folderLayout,
+                    naming: fileNaming
+                )
+                let fileAtPrimaryExists = FileManager.default.fileExists(atPath: fileURL.path)
+                let reexport = BackupScopeRules.shouldReexportExistingPrimaryFile(
+                    incrementalWatermark: incrementalWatermark,
+                    fileExistsAtPrimaryExportPath: fileAtPrimaryExists,
+                    isBackedUpAtAnyKnownPath: isBackedUp
+                )
 
-                if FileManager.default.fileExists(atPath: fileURL.path) {
-                    if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
-                       let size = attributes[.size] as? Int64 {
-                        currentTotalSize += size
+                if fileAtPrimaryExists {
+                    if reexport {
+                        Self.removeExistingExportFiles(
+                            at: fileURL,
+                            asset: asset,
+                            includeLivePhotosAsVideo: includeLivePhotosAsVideo
+                        )
+                    } else {
+                        if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+                           let size = attributes[.size] as? Int64 {
+                            currentTotalSize += size
+                        }
+                        DispatchQueue.main.async {
+                            onProgress(processed, totalWork, "Skipped (exists) \(processed) of \(totalWork)…")
+                        }
+                        return
                     }
-                    return
                 }
-
-                let options = PHImageRequestOptions()
-                options.isSynchronous = true
 
                 if showThumbnail {
+                    let options = PHImageRequestOptions()
+                    options.isSynchronous = true
                     imageManager.requestImage(
                         for: asset,
                         targetSize: CGSize(width: 100, height: 100),
                         contentMode: .aspectFill,
                         options: options
                     ) { image, _ in
-                        if let image = image {
-                            currentThumbnail.wrappedValue = image
-                        }
+                        DispatchQueue.main.async { onThumbnail(image) }
                     }
                 }
 
-                self.writeAsset(asset, to: fileURL, includeLivePhotosAsVideo: includeLivePhotosAsVideo)
+                self.writeAsset(
+                    asset,
+                    to: fileURL,
+                    includeLivePhotosAsVideo: includeLivePhotosAsVideo
+                )
+                filesWritten += 1
 
                 if let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
                    let size = attributes[.size] as? Int64 {
                     currentTotalSize += size
-                    DispatchQueue.main.async {
-                        totalBackupSize.wrappedValue = currentTotalSize
-                    }
                 }
 
-                progressMessage.wrappedValue = "Copied \(index + 1) file\(index == 1 ? "": "s")..."
-                filesWrittenCount += 1
-
                 DispatchQueue.main.async {
-                    backupProgress.wrappedValue = Double(index + 1) / Double(assetsCount) * 100.0
+                    onProgress(processed, totalWork, "Copied \(processed) of \(totalWork)…")
                 }
             }
 
+            let folderCount =
+                (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
+            let canceled = isCanceled()
+            let outcome = BackupOutcome(
+                filesWritten: filesWritten,
+                canceled: canceled,
+                totalSizeBytes: currentTotalSize,
+                totalItemsInFolder: folderCount
+            )
+
             DispatchQueue.main.async {
-                isBackupInProgress.wrappedValue = false
-                currentThumbnail.wrappedValue = nil
-                progressMessage.wrappedValue = ""
                 backupFolderURL.stopAccessingSecurityScopedResource()
-
-                totalBackupSize.wrappedValue = currentTotalSize
-                lastBackupDate.wrappedValue = Date()
-
-                if cancelBackup.wrappedValue {
-                    completionMessage.wrappedValue = "Backup canceled."
-                    cancelBackup.wrappedValue = false
-                } else {
-                    let totalFiles =
-                        (try? FileManager.default.contentsOfDirectory(atPath: backupFolderURL.path).count) ?? 0
-                    completionMessage.wrappedValue =
-                        "Copying complete. Files written: \(filesWrittenCount), Total files in folder: \(totalFiles)"
-                }
-
-                NotificationCenter.default.post(name: NSNotification.Name("SaveBackupInfo"), object: nil)
+                onThumbnail(nil)
+                completion(.success(outcome))
             }
         }
     }
@@ -141,10 +202,11 @@ class BackupManager {
         appendAssetMetadata(asset, to: url)
     }
 
-    private func writeImageAsset(_ asset: PHAsset, to url: URL, backupLivePhotoAsVideo: Bool = false) {
+    private func writeImageAsset(_ asset: PHAsset, to url: URL, backupLivePhotoAsVideo: Bool) {
         let imageManager = PHImageManager.default()
         let requestOptions = PHImageRequestOptions()
         requestOptions.isSynchronous = true
+        requestOptions.isNetworkAccessAllowed = true
 
         imageManager.requestImageDataAndOrientation(for: asset, options: requestOptions) { data, _, _, _ in
             if let data = data {
@@ -156,38 +218,48 @@ class BackupManager {
             }
         }
 
-        if backupLivePhotoAsVideo && asset.mediaSubtypes.contains(.photoLive) {
+        if backupLivePhotoAsVideo, asset.mediaSubtypes.contains(.photoLive) {
+            let liveVideoURL = url.deletingPathExtension().appendingPathExtension("mov")
+            let sem = DispatchSemaphore(value: 0)
             let options = PHLivePhotoRequestOptions()
             options.isNetworkAccessAllowed = true
             options.deliveryMode = .highQualityFormat
-            let liveVideoFilename = url.deletingPathExtension().appendingPathExtension("mov")
 
             imageManager.requestLivePhoto(
-                for: asset, targetSize: CGSize(width: asset.pixelWidth, height: asset.pixelHeight),
-                contentMode: .aspectFit, options: options
+                for: asset,
+                targetSize: CGSize(width: asset.pixelWidth, height: asset.pixelHeight),
+                contentMode: .aspectFit,
+                options: options
             ) { livePhoto, _ in
-                guard let livePhoto = livePhoto else { return }
-
+                guard let livePhoto = livePhoto else {
+                    sem.signal()
+                    return
+                }
                 let resources = PHAssetResource.assetResources(for: livePhoto)
                 if let videoResource = resources.first(where: { $0.type == .pairedVideo }) {
                     PHAssetResourceManager.default().writeData(
-                        for: videoResource, toFile: liveVideoFilename, options: nil
-                    ) { error in
-                        if let error = error {
-                            print("Error writing Live Photo video: \(error)")
-                        }
+                        for: videoResource,
+                        toFile: liveVideoURL,
+                        options: nil
+                    ) { _ in
+                        sem.signal()
                     }
+                } else {
+                    sem.signal()
                 }
             }
+            sem.wait()
         }
     }
 
     private func writeVideoAsset(_ asset: PHAsset, to url: URL) {
+        let sem = DispatchSemaphore(value: 0)
         let imageManager = PHImageManager.default()
         let requestOptions = PHVideoRequestOptions()
         requestOptions.isNetworkAccessAllowed = true
 
         imageManager.requestAVAsset(forVideo: asset, options: requestOptions) { avAsset, _, _ in
+            defer { sem.signal() }
             if let avAsset = avAsset as? AVURLAsset {
                 do {
                     try FileManager.default.copyItem(at: avAsset.url, to: url)
@@ -196,16 +268,16 @@ class BackupManager {
                 }
             }
         }
+        sem.wait()
     }
 
     private func appendAssetMetadata(_ asset: PHAsset, to url: URL) {
         let creationDate = asset.creationDate ?? Date()
         let modificationDate = asset.modificationDate ?? Date()
-
         do {
-            let attributes = [
-                FileAttributeKey.creationDate: creationDate,
-                FileAttributeKey.modificationDate: modificationDate,
+            let attributes: [FileAttributeKey: Any] = [
+                .creationDate: creationDate,
+                .modificationDate: modificationDate,
             ]
             try FileManager.default.setAttributes(attributes, ofItemAtPath: url.path)
         } catch {
@@ -213,60 +285,44 @@ class BackupManager {
         }
     }
 
-    func showConfirmationAlert(
-        backupFolderURL: URL?,
-        showingAlert: Binding<Bool>,
-        completionMessage: Binding<String>
+    private static func removeExistingExportFiles(
+        at fileURL: URL,
+        asset: PHAsset,
+        includeLivePhotosAsVideo: Bool
     ) {
-        let alert = UIAlertController(
-            title: "Clear Backup Folder",
-            message: "Are you sure you want to clear the backup folder?",
-            preferredStyle: .alert
-        )
-        alert.addAction(
-            UIAlertAction(title: "Yes", style: .default) { _ in
-                self.clearTargetFolder(
-                    backupFolderURL: backupFolderURL,
-                    showingAlert: showingAlert,
-                    completionMessage: completionMessage
-                )
-            })
-        alert.addAction(UIAlertAction(title: "No", style: .cancel))
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.rootViewController?.present(alert, animated: true)
+        try? FileManager.default.removeItem(at: fileURL)
+        if asset.mediaType == .image, includeLivePhotosAsVideo, asset.mediaSubtypes.contains(.photoLive) {
+            let movURL = fileURL.deletingPathExtension().appendingPathExtension("mov")
+            try? FileManager.default.removeItem(at: movURL)
         }
     }
 
-    private func clearTargetFolder(
-        backupFolderURL: URL?,
-        showingAlert: Binding<Bool>,
-        completionMessage: Binding<String>
+    /// Removes all items inside the folder but keeps the folder node (preserves security-scoped URL).
+    func clearFolderContents(
+        backupFolderURL: URL,
+        completion: @escaping (Result<Int, Error>) -> Void
     ) {
-        guard let backupFolderURL = backupFolderURL else {
-            showingAlert.wrappedValue = true
-            completionMessage.wrappedValue = "Backup failed: No backup folder selected."
-            return
-        }
-
         guard backupFolderURL.startAccessingSecurityScopedResource() else {
-            print("Error: Unable to start accessing security-scoped resource.")
-            completionMessage.wrappedValue = "Backup failed: Unable to access selected backup folder."
-            showingAlert.wrappedValue = true
+            completion(.failure(BackupManagerError.securityScopeDenied))
             return
         }
-
         DispatchQueue.global(qos: .userInitiated).async {
+            defer { backupFolderURL.stopAccessingSecurityScopedResource() }
             do {
-                try FileManager.default.removeItem(at: backupFolderURL)
-                try FileManager.default.createDirectory(
+                let items = try FileManager.default.contentsOfDirectory(
                     at: backupFolderURL,
-                    withIntermediateDirectories: true,
-                    attributes: nil
+                    includingPropertiesForKeys: nil
                 )
+                for item in items {
+                    try FileManager.default.removeItem(at: item)
+                }
+                DispatchQueue.main.async {
+                    completion(.success(items.count))
+                }
             } catch {
-                print("Error deleting folder: \(error)")
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
             }
         }
     }

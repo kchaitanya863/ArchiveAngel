@@ -1,308 +1,313 @@
 import SwiftUI
-import Photos
 
 struct ContentView: View {
-    @State private var backupFolderURL: URL?
-    @State private var showDocumentPicker = false
-
-    @State private var isBackupInProgress = false
-    @State private var backupProgress: Double = 0.0
-
-    @State private var showingAlert = false
-    @State private var completionMessage: String = ""
-    @State private var progressMessage: String = ""
-    @State private var currentThumbnail: UIImage?
-
-    @State private var includePhotos = true
-    @State private var includeVideos = true
-    @State private var includeLivePhotosAsVideo = true
-
-    @State private var totalPhotosCount = 0
-    @State private var totalVideosCount = 0
-
-    @State private var totalMissingPhotosCount = 0
-    @State private var totalMissingVideosCount = 0
-
-    @State private var showThumbnail = false
-
-    @State private var cancelBackup = false
-    @State private var isDedupInProgress = false
-    @State private var dedupProgress: Double = 0.0
-    @State private var dedupMessage: String = ""
-    @State private var cancelDedup = false
-
-    @State private var totalBackupSize: Int64 = 0
-    @State private var lastBackupDate: Date?
-
-    private let backupManager = BackupManager()
-    private let deduplicationManager = DeduplicationManager()
-
-    @Environment(\.scenePhase) private var scenePhase
-
-    init() {
-        // Load saved values
-        _totalBackupSize = State(initialValue: Int64(UserDefaults.standard.integer(forKey: "totalBackupSize")))
-        _lastBackupDate = State(initialValue: UserDefaults.standard.object(forKey: "lastBackupDate") as? Date)
-    }
-
-    private func fetchMediaCounts() {
-        let photosOptions = PHFetchOptions()
-        photosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.image.rawValue)
-        totalPhotosCount = PHAsset.fetchAssets(with: photosOptions).count
-
-        let videosOptions = PHFetchOptions()
-        videosOptions.predicate = NSPredicate(format: "mediaType = %d", PHAssetMediaType.video.rawValue)
-        totalVideosCount = PHAsset.fetchAssets(with: videosOptions).count
-    }
-
-    private func calculateMissingMediaCounts(url: URL) {
-        totalMissingPhotosCount = 0
-        totalMissingVideosCount = 0
-        let fetchOptions = PHFetchOptions()
-        let assets = PHAsset.fetchAssets(with: fetchOptions)
-        assets.enumerateObjects { (asset, index, stop) in
-            if asset.mediaType == .image && !includePhotos {
-                return
-            }
-
-            if asset.mediaType == .video && !includeVideos {
-                return
-            }
-
-            let filename = asset.value(forKey: "filename") as? String ?? "unknown"
-            let fileURL = url.appendingPathComponent(
-                asset.localIdentifier.replacingOccurrences(of: "/", with: "_") + filename)
-
-            if !FileManager.default.fileExists(atPath: fileURL.path) {
-                if asset.mediaType == .image {
-                    totalMissingPhotosCount += 1
-                } else if asset.mediaType == .video {
-                    totalMissingVideosCount += 1
-                }
-            }
-        }
-    }
-
-    private func saveBackupInfo() {
-        UserDefaults.standard.set(totalBackupSize, forKey: "totalBackupSize")
-        UserDefaults.standard.set(lastBackupDate, forKey: "lastBackupDate")
-    }
+    @EnvironmentObject private var viewModel: ArchiveAngelViewModel
 
     var body: some View {
+        mainScrollView
+            .sheet(isPresented: $viewModel.showDocumentPicker) {
+                DocumentPicker { url in
+                    viewModel.userPickedBackupFolder(url)
+                }
+            }
+            .onAppear(perform: handleAppear)
+    }
+
+    // MARK: - Main stack (split for Swift compiler / previews)
+
+    private var mainScrollView: some View {
         ScrollView {
-            VStack {
-                Spacer()
+            VStack(spacing: 16) {
+                heroSection
+                chooseBackupFolderCallout
+                libraryStatsSection
+                diskSpaceSection
+                settingsHintRow
+                backupMetadataSection
+                primaryBackupButton
+                backupDestinationSection
+                backupProgressSection
+            }
+            .padding(.vertical, 24)
+        }
+    }
 
-                Image("AppHomeIcon")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 200, height: 200)
+    @ViewBuilder private var heroSection: some View {
+        Image("AppHomeIcon")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 200, height: 200)
+            .accessibilityHidden(true)
+    }
 
-                if !isBackupInProgress {
-                    Button("Select Backup Folder") {
-                        showDocumentPicker = true
-                    }
-                    .sheet(isPresented: $showDocumentPicker) {
-                        DocumentPicker { url in
-                            backupFolderURL = url
+    /// Shown only when no folder bookmark is saved yet.
+    @ViewBuilder private var chooseBackupFolderCallout: some View {
+        if !viewModel.isBackupInProgress, viewModel.state.backupFolderBookmark == nil {
+            Button("Choose backup folder") {
+                viewModel.showDocumentPicker = true
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityHint("Choose where exported photos and videos are saved.")
+        }
+    }
+
+    /// Shown when a destination is already saved; name resolves when the bookmark is valid.
+    @ViewBuilder private var backupDestinationSection: some View {
+        if !viewModel.isBackupInProgress, viewModel.state.backupFolderBookmark != nil {
+            GroupBox("Backup destination") {
+                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let name = viewModel.backupFolderDisplayName {
+                            Text(name)
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .lineLimit(3)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            Text("Folder could not be opened")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            Text("Tap Change to pick the folder again.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                     }
-                }
-
-                Text("Photos: \(totalPhotosCount), Videos: \(totalVideosCount)")
-                    .onAppear(perform: fetchMediaCounts)
-
-                HStack {
-                    Text(
-                        "Missing Photos: \(totalMissingPhotosCount), Missing Videos: \(totalMissingVideosCount)"
-                    )
-                    .onAppear(perform: {
-                        if let backupFolderURL = backupFolderURL {
-                            calculateMissingMediaCounts(url: backupFolderURL)
-                        }
-                    })
-                    
-                    Button(action: {
-                        if let backupFolderURL = backupFolderURL {
-                            calculateMissingMediaCounts(url: backupFolderURL)
-                        }
-                    }) {
-                        Image(systemName: "arrow.clockwise")
-                            .foregroundColor(.blue)
+                    Button("Change") {
+                        viewModel.showDocumentPicker = true
                     }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel("Change backup folder")
+                    .accessibilityHint("Pick a different folder for backups.")
                 }
-                .padding()
+            }
+            .padding(.horizontal)
+        }
+    }
 
-                GroupBox("Backup Settings") {
-                    Toggle("Include Photos", isOn: $includePhotos)
-                    Toggle("Include Videos", isOn: $includeVideos)
-                    Toggle("Include Live Photos as Video", isOn: $includeLivePhotosAsVideo)
-                    Toggle("Show Thumbnail when Copying", isOn: $showThumbnail)
+    @ViewBuilder private var libraryStatsSection: some View {
+        Text("Photos: \(viewModel.totalPhotosCount), videos: \(viewModel.totalVideosCount)")
+            .font(.subheadline)
+            .accessibilityElement(children: .combine)
+
+        HStack(alignment: .center) {
+            Text(missingCountsLabel)
+                .font(.subheadline)
+                .accessibilityLabel(missingCountsAccessibilityLabel)
+            Spacer(minLength: 8)
+            Button {
+                viewModel.refreshMissingCounts()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .accessibilityLabel("Refresh missing counts")
+        }
+        .padding(.horizontal)
+
+        if let summary = backupScopeSummary {
+            Text(summary)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal)
+                .accessibilityLabel(backupScopeAccessibilityLabel)
+        }
+    }
+
+    private var backupScopeSummary: String? {
+        let albums = viewModel.state.backupAlbumCollectionLocalIdentifiers.count
+        let incremental = viewModel.state.backupIncrementalEnabled
+        if albums == 0, !incremental { return nil }
+        var parts: [String] = []
+        if albums > 0 {
+            parts.append("\(albums) album\(albums == 1 ? "" : "s")")
+        } else {
+            parts.append("Entire library")
+        }
+        parts.append(incremental ? "incremental on" : "incremental off")
+        return parts.joined(separator: " · ")
+    }
+
+    private var backupScopeAccessibilityLabel: String {
+        let albums = viewModel.state.backupAlbumCollectionLocalIdentifiers.count
+        let incremental = viewModel.state.backupIncrementalEnabled
+        let scopeText =
+            albums > 0
+            ? "Backup scope is limited to \(albums) selected albums."
+            : "Backup scope is the entire photo library."
+        let incText =
+            incremental
+            ? "Incremental backup is on; only items added or edited in the library after the last successful backup are exported, even if the backup folder is new or empty."
+            : "Incremental backup is off."
+        return "\(scopeText) \(incText)"
+    }
+
+    private var settingsHintRow: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "gearshape")
+                .foregroundColor(.secondary)
+                .accessibilityHidden(true)
+            Text("Filters, export layout, duplicate scan, and clearing the folder are in the Settings tab.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Filters, export layout, duplicate scan, and clearing the folder are in the Settings tab.")
+    }
+
+    private var missingCountsLabel: String {
+        "Missing — photos: \(viewModel.totalMissingPhotosCount), videos: \(viewModel.totalMissingVideosCount)"
+    }
+
+    private var missingCountsAccessibilityLabel: String {
+        "Missing from backup: \(viewModel.totalMissingPhotosCount) photos, \(viewModel.totalMissingVideosCount) videos"
+    }
+
+    @ViewBuilder private var diskSpaceSection: some View {
+        if viewModel.state.backupFolderBookmark != nil {
+            VStack(alignment: .leading, spacing: 6) {
+                if viewModel.diskSpaceNeededForMissingBytes > 0 {
+                    Text(diskSpaceNeededLabel)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .accessibilityLabel(diskSpaceNeededAccessibilityLabel)
                 }
-                .padding()
-
-                if let date = lastBackupDate {
-                    Text("Last Backup: \(date, style: .date)")
-                }
-                Text("Total Backup Size: \(ByteCountFormatter.string(fromByteCount: totalBackupSize, countStyle: .file))")
-                .padding()
-
-//                Button("Star this project on GitHub 💻") {
-//                    UIApplication.shared.open(URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!)
-//                }
-//                .padding()
-//                .background(Color.white)
-//                .foregroundColor(.black)
-//                .cornerRadius(8)
-                
-                if !isBackupInProgress {
-                    Button("Backup Photos 💾") {
-                        backupManager.startBackupProcess(
-                            backupFolderURL: backupFolderURL,
-                            includePhotos: includePhotos,
-                            includeVideos: includeVideos,
-                            includeLivePhotosAsVideo: includeLivePhotosAsVideo,
-                            showThumbnail: showThumbnail,
-                            isBackupInProgress: $isBackupInProgress,
-                            backupProgress: $backupProgress,
-                            cancelBackup: $cancelBackup,
-                            currentThumbnail: $currentThumbnail,
-                            progressMessage: $progressMessage,
-                            completionMessage: $completionMessage,
-                            showingAlert: $showingAlert,
-                            totalBackupSize: $totalBackupSize,
-                            lastBackupDate: $lastBackupDate
-                        )
-                    }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                    .alert(isPresented: $showingAlert) {
-                        Alert(
-                            title: Text("No Folder Selected"),
-                            message: Text("Please select a folder to backup your photos."),
-                            dismissButton: .default(Text("OK"))
-                        )
-                    }
-                    .alert(
-                        isPresented: Binding<Bool>(
-                            get: { !completionMessage.isEmpty },
-                            set: { _ in completionMessage = "" }
-                        )
-                    ) {
-                        Alert(
-                            title: Text("Backup Complete"), message: Text(completionMessage),
-                            dismissButton: .default(Text("OK")))
-                    }
-                }
-
-                if let url = backupFolderURL {
-                    Text("Backup to: \(url.lastPathComponent)")
+                Text(diskSpaceFreeLabel)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .accessibilityLabel(diskSpaceFreeAccessibilityLabel)
+                if let warning = diskSpaceWarningText {
+                    Text(warning)
                         .font(.caption)
-                        .padding()
-                        .multilineTextAlignment(.center)
-                }
-
-                if isBackupInProgress, let thumbnail = currentThumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
-                        .clipped()
-                        .cornerRadius(8)
-                        .padding()
-                    Text(progressMessage)
-                        .lineLimit(2)
-                        .truncationMode(.tail)
-                        .padding()
-                }
-
-                if isBackupInProgress {
-                    ProgressView(value: backupProgress, total: 100)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding()
-                }
-
-                if isBackupInProgress {
-                    Button("Cancel Backup 🛑") {
-                        cancelBackup = true
-                    }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-
-                if !isBackupInProgress {
-                    Button("Clear Destination Folder ⚠️") {
-                        backupManager.showConfirmationAlert(
-                            backupFolderURL: backupFolderURL,
-                            showingAlert: $showingAlert,
-                            completionMessage: $completionMessage
-                        )
-                    }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-
-                if !isDedupInProgress {
-                    Button("Delete Duplicate Photos 📸") {
-                        deduplicationManager.deleteDuplicatePhotos(
-                            isDedupInProgress: $isDedupInProgress,
-                            dedupProgress: $dedupProgress,
-                            dedupMessage: $dedupMessage,
-                            cancelDedup: $cancelDedup,
-                            fetchMediaCounts: fetchMediaCounts
-                        )
-                    }
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-
-                if isDedupInProgress {
-                    ProgressView(value: dedupProgress, total: 1.0)
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .padding()
-                    Text(dedupMessage)
-                        .padding()
-                    Button("Cancel Deduplication 🛑") {
-                        cancelDedup = true
-                    }
-                    .padding()
-                    .background(Color.red)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                }
-
-                Spacer()
-            }
-        }
-        .onAppear {
-            NotificationCenter.default.addObserver(
-                forName: NSNotification.Name("SaveBackupInfo"),
-                object: nil,
-                queue: .main
-            ) { _ in
-                saveBackupInfo()
-            }
-        }
-        .onChange(of: scenePhase) { newPhase in
-            if newPhase == .active {
-                if let backupFolderURL = backupFolderURL {
-                    calculateMissingMediaCounts(url: backupFolderURL)
+                        .foregroundColor(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityLabel(warning)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
         }
+    }
+
+    private var diskSpaceNeededLabel: String {
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
+            countStyle: .file
+        )
+        return "Rough space for new items: \(formatted) (approximate)"
+    }
+
+    private var diskSpaceNeededAccessibilityLabel: String {
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
+            countStyle: .file
+        )
+        return "Rough space needed for items not yet backed up: about \(formatted). This is approximate."
+    }
+
+    private var diskSpaceFreeLabel: String {
+        if let free = viewModel.diskSpaceDestinationFreeBytes {
+            let formatted = ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
+            return "Destination free space: \(formatted)"
+        }
+        return "Destination free space: unavailable"
+    }
+
+    private var diskSpaceFreeAccessibilityLabel: String {
+        if let free = viewModel.diskSpaceDestinationFreeBytes {
+            let formatted = ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
+            return "Free space on the backup destination: about \(formatted)"
+        }
+        return "Free space on the backup destination could not be read."
+    }
+
+    private var diskSpaceWarningText: String? {
+        switch viewModel.diskSpaceAssessment {
+        case .tightRemaining(let headroom):
+            let hf = ByteCountFormatter.string(fromByteCount: headroom, countStyle: .file)
+            return "Low space: only about \(hf) would remain after the estimate. Consider freeing room or using another folder."
+        case .insufficient(let shortBy):
+            let sf = ByteCountFormatter.string(fromByteCount: shortBy, countStyle: .file)
+            return "Not enough free space for the rough estimate (short by about \(sf)). You can still try to back up."
+        case .unknownFreeSpace:
+            if viewModel.diskSpaceNeededForMissingBytes > 0 {
+                return "Could not read free space for this location; the estimate may not match what the Files provider reports."
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
+
+    @ViewBuilder private var backupMetadataSection: some View {
+        if let date = viewModel.state.lastBackupDate {
+            Text("Last backup: \(date, style: .date)")
+                .font(.subheadline)
+        }
+        Text(totalBackupSizeLabel)
+            .font(.subheadline)
+    }
+
+    private var totalBackupSizeLabel: String {
+        let formatted = ByteCountFormatter.string(
+            fromByteCount: viewModel.state.totalBackupSize,
+            countStyle: .file
+        )
+        return "Total backup size: \(formatted)"
+    }
+
+    @ViewBuilder private var primaryBackupButton: some View {
+        if !viewModel.isBackupInProgress {
+            Button("Back up library") {
+                viewModel.startBackup()
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityHint("Copies new items from your library into the selected folder.")
+        }
+    }
+
+    @ViewBuilder private var backupProgressSection: some View {
+        if viewModel.isBackupInProgress, let thumbnail = viewModel.currentThumbnail {
+            Image(uiImage: thumbnail)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 100, height: 100)
+                .clipped()
+                .cornerRadius(8)
+                .accessibilityLabel("Current item thumbnail")
+            Text(viewModel.progressMessage)
+                .font(.caption)
+                .lineLimit(2)
+                .truncationMode(.tail)
+                .padding(.horizontal)
+        }
+
+        if viewModel.isBackupInProgress {
+            ProgressView(value: viewModel.backupProgress, total: 100)
+                .progressViewStyle(.linear)
+                .padding(.horizontal)
+                .accessibilityLabel("Backup progress")
+            Button("Cancel backup") {
+                viewModel.cancelBackup()
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+        }
+    }
+
+    private func handleAppear() {
+        viewModel.refreshMediaCounts()
+        viewModel.refreshMissingCounts()
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
+            .environmentObject(ArchiveAngelViewModel())
     }
 }

@@ -16,8 +16,27 @@
 		6B50B9962B0302CE00AE2376 /* photo_backupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9952B0302CE00AE2376 /* photo_backupTests.swift */; };
 		6B50B9A02B0302CE00AE2376 /* photo_backupUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */; };
 		6B50B9A22B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */; };
+		7AF093102B0302CE00AE2376 /* StoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */; };
 		6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */; };
 		6B50B9B22B034C5900AE2376 /* AppHomeIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */; };
+		7AF010102B0302CE00AE2376 /* AppPersistentState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010202B0302CE00AE2376 /* AppPersistentState.swift */; };
+		7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010212B0302CE00AE2376 /* AppStateStore.swift */; };
+		7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010222B0302CE00AE2376 /* BackupNaming.swift */; };
+		7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */; };
+		7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF070202B0302CE00AE2376 /* BackupScope.swift */; };
+		7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */; };
+		7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */; };
+		7AF010132B0302CE00AE2376 /* CryptoHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */; };
+		7AF010142B0302CE00AE2376 /* ArchiveAngelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */; };
+		7AF020102B0302CE00AE2376 /* BackupBookmarkResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF020202B0302CE00AE2376 /* BackupBookmarkResolver.swift */; };
+		7AF020112B0302CE00AE2376 /* RunBackupAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */; };
+		7AF030102B0302CE00AE2376 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */; };
+		7AF030112B0302CE00AE2376 /* ActivityLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */; };
+		7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */; };
+		7AF030122B0302CE00AE2376 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030222B0302CE00AE2376 /* HistoryView.swift */; };
+		7AF030132B0302CE00AE2376 /* ArchiveAngelRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */; };
+		7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */; };
+		7AF010302B0302CE00AE2376 /* ArchiveAngelCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,9 +69,28 @@
 		6B50B99B2B0302CE00AE2376 /* photo backupUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "photo backupUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITests.swift; sourceTree = "<group>"; };
 		6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		6B50B9B02B0322B300AE2376 /* photo-backup-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "photo-backup-Info.plist"; sourceTree = SOURCE_ROOT; };
 		6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppHomeIcon.png; sourceTree = "<group>"; };
+		7AF010202B0302CE00AE2376 /* AppPersistentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPersistentState.swift; sourceTree = "<group>"; };
+		7AF010212B0302CE00AE2376 /* AppStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateStore.swift; sourceTree = "<group>"; };
+		7AF010222B0302CE00AE2376 /* BackupNaming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupNaming.swift; sourceTree = "<group>"; };
+		7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDiskSpaceEstimator.swift; sourceTree = "<group>"; };
+		7AF070202B0302CE00AE2376 /* BackupScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupScope.swift; sourceTree = "<group>"; };
+		7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumScopePickerView.swift; sourceTree = "<group>"; };
+		7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOutputSettings.swift; sourceTree = "<group>"; };
+		7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoHelpers.swift; sourceTree = "<group>"; };
+		7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelViewModel.swift; sourceTree = "<group>"; };
+		7AF020202B0302CE00AE2376 /* BackupBookmarkResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupBookmarkResolver.swift; sourceTree = "<group>"; };
+		7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunBackupAppIntents.swift; sourceTree = "<group>"; };
+		7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
+		7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogStore.swift; sourceTree = "<group>"; };
+		7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogPresenter.swift; sourceTree = "<group>"; };
+		7AF030222B0302CE00AE2376 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelRootView.swift; sourceTree = "<group>"; };
+		7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
+		7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelCoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -105,13 +143,30 @@
 			children = (
 				6B50B9B02B0322B300AE2376 /* photo-backup-Info.plist */,
 				6B50B9842B0302CC00AE2376 /* photo_backupApp.swift */,
+				7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */,
 				6B50B9862B0302CC00AE2376 /* ContentView.swift */,
+				7AF030222B0302CE00AE2376 /* HistoryView.swift */,
+				7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */,
 				6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */,
 				6B50B9882B0302CE00AE2376 /* Assets.xcassets */,
 				6B50B98A2B0302CE00AE2376 /* Preview Content */,
 				6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */,
 				4F7BAFB12C9C9E10000D16C9 /* BackupManager.swift */,
 				4F7BAFB32C9C9E31000D16C9 /* DeduplicationManager.swift */,
+				7AF010202B0302CE00AE2376 /* AppPersistentState.swift */,
+				7AF010212B0302CE00AE2376 /* AppStateStore.swift */,
+				7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */,
+				7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */,
+				7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */,
+				7AF010222B0302CE00AE2376 /* BackupNaming.swift */,
+				7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */,
+				7AF070202B0302CE00AE2376 /* BackupScope.swift */,
+				7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */,
+				7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */,
+				7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */,
+				7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */,
+				7AF020202B0302CE00AE2376 /* BackupBookmarkResolver.swift */,
+				7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */,
 			);
 			path = "photo backup";
 			sourceTree = "<group>";
@@ -128,6 +183,7 @@
 			isa = PBXGroup;
 			children = (
 				6B50B9952B0302CE00AE2376 /* photo_backupTests.swift */,
+				7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */,
 			);
 			path = "photo backupTests";
 			sourceTree = "<group>";
@@ -137,6 +193,7 @@
 			children = (
 				6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */,
 				6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */,
+				7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */,
 			);
 			path = "photo backupUITests";
 			sourceTree = "<group>";
@@ -272,6 +329,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AF010102B0302CE00AE2376 /* AppPersistentState.swift in Sources */,
+				7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */,
+				7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */,
+				7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */,
+				7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */,
+				7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */,
+				7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */,
+				7AF010132B0302CE00AE2376 /* CryptoHelpers.swift in Sources */,
+				7AF010142B0302CE00AE2376 /* ArchiveAngelViewModel.swift in Sources */,
+				7AF020102B0302CE00AE2376 /* BackupBookmarkResolver.swift in Sources */,
+				7AF020112B0302CE00AE2376 /* RunBackupAppIntents.swift in Sources */,
+				7AF030102B0302CE00AE2376 /* ActivityLogEntry.swift in Sources */,
+				7AF030112B0302CE00AE2376 /* ActivityLogStore.swift in Sources */,
+				7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */,
+				7AF030122B0302CE00AE2376 /* HistoryView.swift in Sources */,
+				7AF030132B0302CE00AE2376 /* ArchiveAngelRootView.swift in Sources */,
+				7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */,
 				4F7BAFB42C9C9E31000D16C9 /* DeduplicationManager.swift in Sources */,
 				6B50B9872B0302CC00AE2376 /* ContentView.swift in Sources */,
 				6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */,
@@ -284,6 +358,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7AF010302B0302CE00AE2376 /* ArchiveAngelCoreTests.swift in Sources */,
 				6B50B9962B0302CE00AE2376 /* photo_backupTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -294,6 +369,7 @@
 			files = (
 				6B50B9A02B0302CE00AE2376 /* photo_backupUITests.swift in Sources */,
 				6B50B9A22B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift in Sources */,
+				7AF093102B0302CE00AE2376 /* StoreScreenshotUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -447,7 +523,6 @@
 				INFOPLIST_FILE = "photo-backup-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = ArchiveAngel;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Provide access to photos to backup";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -460,6 +535,7 @@
 				);
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
+				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -482,7 +558,6 @@
 				INFOPLIST_FILE = "photo-backup-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = ArchiveAngel;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Provide access to photos to backup";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -495,6 +570,7 @@
 				);
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
+				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -518,7 +594,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/photo backup.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/photo backup";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Archive Angel.app/Archive Angel";
 			};
 			name = Debug;
 		};
@@ -538,7 +614,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/photo backup.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/photo backup";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Archive Angel.app/Archive Angel";
 			};
 			name = Release;
 		};
@@ -556,7 +632,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "photo backup";
+				TEST_TARGET_NAME = "Archive Angel";
 			};
 			name = Debug;
 		};
@@ -574,7 +650,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "photo backup";
+				TEST_TARGET_NAME = "Archive Angel";
 			};
 			name = Release;
 		};
