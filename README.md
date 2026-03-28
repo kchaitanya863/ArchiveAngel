@@ -9,7 +9,8 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 - **Backup** — Copies images and/or videos into a user-selected directory; skips files that already exist; optional Live Photo companion `.mov`; preserves creation/modification dates on exported files. You can choose **folder structure** (flat, by UTC date, by photos vs videos, or combined) and **filename pattern** (ID + original name, date prefix, or ID + extension).
 - **Progress** — Linear progress by number of library items that match your filters; optional thumbnail while copying; cancel anytime.
 - **Folder bookmark** — The backup location is stored as a bookmark in on-disk app state so it can be restored after relaunch (you may need to re-pick the folder if the bookmark goes stale).
-- **State on disk** — Preferences and backup stats live in Application Support as JSON (`ArchiveAngel/app_state.json`), with a one-time migration from legacy `UserDefaults` keys.
+- **State on disk** — Preferences and backup stats live in Application Support as JSON (`ArchiveAngel/app_state.json`), with a one-time migration from legacy `UserDefaults` keys. A separate **SQLite export index** (`ArchiveAngel/export_index.sqlite`) tracks which photo/video `localIdentifier`s already appear in the current backup folder under the current layout and filename pattern, so “missing” counts and disk estimates stay fast without scanning every file for every asset on each refresh.
+- **Index when things change** — If you change the backup folder bookmark, folder structure, or filename pattern, the app detects a stale index, explains it on the Backup tab, and **reindexes** the destination folder in place (progress text while scanning). If indexing fails, the app falls back to a slower per-asset filesystem check and shows an alert.
 - **Clear folder** — Removes **contents** of the backup folder only (keeps the folder node and security-scoped access pattern).
 - **Duplicate photos** — Scans **images only** (SHA-256 of image data); videos are not scanned. After a scan, you confirm before anything is deleted from the library.
 - **Siri & Shortcuts (iOS 16+)** — App Intent **“Run backup to last folder”** opens the app and runs the same backup as the in-app button, using your saved folder bookmark and settings. Find it under the app in Shortcuts, or say e.g. “Run backup in Archive Angel” (phrase depends on your app display name).
@@ -31,6 +32,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 | Backup / clear folder | `photo backup/BackupManager.swift` |
 | Dedup scan + delete | `photo backup/DeduplicationManager.swift` |
 | Filenames, output layout & progress helpers | `photo backup/BackupNaming.swift`, `BackupOutputSettings.swift`, `BackupProgressMath` |
+| Export index (SQLite, missing counts) | `photo backup/BackupExportIndex.swift` (`BackupExportIndexStore`, `BackupExportFilenameParser`) |
 | Persistent JSON state | `photo backup/AppPersistentState.swift`, `AppStateStore.swift` |
 | Activity log | `photo backup/ActivityLogEntry.swift`, `ActivityLogStore.swift` |
 | Document folder picker | `photo backup/DocumentPicker.swift` |
@@ -54,7 +56,7 @@ In Xcode: **Product → Test** for the `photo backupTests` target, or:
 xcodebuild test -scheme "Archive Angel" -destination 'platform=iOS Simulator,name=iPhone 16' -only-testing:'photo backupTests'
 ```
 
-Adjust the simulator name to one installed on your Mac (`xcodebuild -showdestinations`).
+Use a simulator that exists on your Mac (`xcodebuild -showdestinations`). If Xcode reports an **ambiguous destination** for `name=…`, pass a specific device id instead, e.g. `-destination 'platform=iOS Simulator,id=<UDID>'`.
 
 ## Usage (short)
 
@@ -109,7 +111,7 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 ### Already in the app (for context)
 
 - Shortcuts intent **Run backup to last folder**, **History** tab with activity log, **Change** backup folder when one is already set, and file-backed **state** + **activity** JSON under Application Support.
-- **Disk space** — Rough size estimate for items not yet in the backup folder, destination free space when readable, on-screen warnings when space looks tight or too small, and a confirmation sheet before starting when the estimate exceeds free space.
+- **Disk space** — Rough size estimate for items not yet in the backup folder, destination free space when readable, on-screen warnings when space looks tight or too small, and a confirmation sheet before starting when the estimate exceeds free space. Missing counts prefer the **SQLite export index** (updated during backup and after a full reindex when the folder or export format changes).
 - **Incremental backup** — Optional “only new or changed since last backup” using the **library** and last successful backup time (not “missing from this folder”), so switching to a new destination only exports items added or edited after that time; turn off for a full copy to an empty folder.
 - **Album scope** — Limit backup, missing counts, and disk estimates to selected user albums and smart albums (e.g. Favorites); leave none selected for the whole library.
 

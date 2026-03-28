@@ -4,6 +4,16 @@ import XCTest
 
 final class ArchiveAngelCoreTests: XCTestCase {
 
+    func testBackupProgressEstimatedRemainingTime() {
+        XCTAssertNil(BackupProgressMath.estimatedRemainingTime(elapsed: 1, processedSteps: 0, totalSteps: 10))
+        XCTAssertNil(BackupProgressMath.estimatedRemainingTime(elapsed: 1, processedSteps: 10, totalSteps: 10))
+        if let eta = BackupProgressMath.estimatedRemainingTime(elapsed: 10, processedSteps: 5, totalSteps: 10) {
+            XCTAssertEqual(eta, 10, accuracy: 0.001)
+        } else {
+            XCTFail("Expected ETA")
+        }
+    }
+
     func testBackupProgressMathPercent() {
         XCTAssertEqual(BackupProgressMath.percent(processed: 0, total: 10), 0, accuracy: 0.001)
         XCTAssertEqual(BackupProgressMath.percent(processed: 5, total: 10), 50, accuracy: 0.001)
@@ -219,6 +229,49 @@ final class ArchiveAngelCoreTests: XCTestCase {
         )
         XCTAssertGreaterThan(image, 100_000)
         XCTAssertLessThanOrEqual(image, 40_000_000)
+    }
+
+    func testBackupExportFilenameParserRoundTrip() {
+        let id = "AAAAAAAB-AAAA-AAAA-AAAA-AAAAAAAAAAAA/L0/001"
+        let sanitized = id.replacingOccurrences(of: "/", with: "_")
+        let baseIO = sanitized + ".heic"
+        XCTAssertEqual(
+            BackupExportFilenameParser.localIdentifier(fromExportBasename: baseIO, naming: .localIdentifierOnly),
+            id
+        )
+        let baseFull = sanitized + "_IMG_0001.JPG"
+        XCTAssertEqual(
+            BackupExportFilenameParser.localIdentifier(fromExportBasename: baseFull, naming: .identifierAndOriginal),
+            id
+        )
+        let dated = "2024-01-15_" + sanitized + "_photo.jpg"
+        XCTAssertEqual(
+            BackupExportFilenameParser.localIdentifier(fromExportBasename: dated, naming: .datePrefixIdentifierOriginal),
+            id
+        )
+    }
+
+    func testLooseExportedFilenameMatching() {
+        let id = "ABC123"
+        XCTAssertTrue(
+            BackupNaming.looseExportedFilename("ABC123_IMG_0001.jpg", matchesAssetId: id, naming: .identifierAndOriginal)
+        )
+        XCTAssertTrue(
+            BackupNaming.looseExportedFilename("ABC123IMG.jpg", matchesAssetId: id, naming: .identifierAndOriginal)
+        )
+        XCTAssertFalse(
+            BackupNaming.looseExportedFilename("AB_other.jpg", matchesAssetId: id, naming: .identifierAndOriginal)
+        )
+        XCTAssertTrue(
+            BackupNaming.looseExportedFilename(
+                "2024-06-01_ABC123_photo.jpg",
+                matchesAssetId: id,
+                naming: .datePrefixIdentifierOriginal
+            )
+        )
+        XCTAssertTrue(
+            BackupNaming.looseExportedFilename("ABC123.heic", matchesAssetId: id, naming: .localIdentifierOnly)
+        )
     }
 
     func testBackupScopeRules() {

@@ -16,27 +16,28 @@
 		6B50B9962B0302CE00AE2376 /* photo_backupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9952B0302CE00AE2376 /* photo_backupTests.swift */; };
 		6B50B9A02B0302CE00AE2376 /* photo_backupUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */; };
 		6B50B9A22B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */; };
-		7AF093102B0302CE00AE2376 /* StoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */; };
 		6B50B9AF2B0307C000AE2376 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */; };
 		6B50B9B22B034C5900AE2376 /* AppHomeIcon.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */; };
 		7AF010102B0302CE00AE2376 /* AppPersistentState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010202B0302CE00AE2376 /* AppPersistentState.swift */; };
 		7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010212B0302CE00AE2376 /* AppStateStore.swift */; };
 		7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010222B0302CE00AE2376 /* BackupNaming.swift */; };
-		7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */; };
-		7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF070202B0302CE00AE2376 /* BackupScope.swift */; };
-		7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */; };
-		7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */; };
 		7AF010132B0302CE00AE2376 /* CryptoHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */; };
 		7AF010142B0302CE00AE2376 /* ArchiveAngelViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */; };
+		7AF010302B0302CE00AE2376 /* ArchiveAngelCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */; };
 		7AF020102B0302CE00AE2376 /* BackupBookmarkResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF020202B0302CE00AE2376 /* BackupBookmarkResolver.swift */; };
 		7AF020112B0302CE00AE2376 /* RunBackupAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */; };
 		7AF030102B0302CE00AE2376 /* ActivityLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */; };
 		7AF030112B0302CE00AE2376 /* ActivityLogStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */; };
-		7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */; };
 		7AF030122B0302CE00AE2376 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030222B0302CE00AE2376 /* HistoryView.swift */; };
 		7AF030132B0302CE00AE2376 /* ArchiveAngelRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */; };
+		7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */; };
 		7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */; };
-		7AF010302B0302CE00AE2376 /* ArchiveAngelCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */; };
+		7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */; };
+		7AF0B0102B0302CE00AE2376 /* BackupExportIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */; };
+		7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF070202B0302CE00AE2376 /* BackupScope.swift */; };
+		7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */; };
+		7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */; };
+		7AF093102B0302CE00AE2376 /* StoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,28 +70,29 @@
 		6B50B99B2B0302CE00AE2376 /* photo backupUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "photo backupUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B50B99F2B0302CE00AE2376 /* photo_backupUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITests.swift; sourceTree = "<group>"; };
 		6B50B9A12B0302CE00AE2376 /* photo_backupUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = photo_backupUITestsLaunchTests.swift; sourceTree = "<group>"; };
-		7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotUITests.swift; sourceTree = "<group>"; };
 		6B50B9AE2B0307C000AE2376 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		6B50B9B02B0322B300AE2376 /* photo-backup-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "photo-backup-Info.plist"; sourceTree = SOURCE_ROOT; };
 		6B50B9B12B034C5900AE2376 /* AppHomeIcon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = AppHomeIcon.png; sourceTree = "<group>"; };
 		7AF010202B0302CE00AE2376 /* AppPersistentState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPersistentState.swift; sourceTree = "<group>"; };
 		7AF010212B0302CE00AE2376 /* AppStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateStore.swift; sourceTree = "<group>"; };
 		7AF010222B0302CE00AE2376 /* BackupNaming.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupNaming.swift; sourceTree = "<group>"; };
-		7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDiskSpaceEstimator.swift; sourceTree = "<group>"; };
-		7AF070202B0302CE00AE2376 /* BackupScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupScope.swift; sourceTree = "<group>"; };
-		7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumScopePickerView.swift; sourceTree = "<group>"; };
-		7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOutputSettings.swift; sourceTree = "<group>"; };
 		7AF010232B0302CE00AE2376 /* CryptoHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CryptoHelpers.swift; sourceTree = "<group>"; };
 		7AF010242B0302CE00AE2376 /* ArchiveAngelViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelViewModel.swift; sourceTree = "<group>"; };
+		7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelCoreTests.swift; sourceTree = "<group>"; };
 		7AF020202B0302CE00AE2376 /* BackupBookmarkResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupBookmarkResolver.swift; sourceTree = "<group>"; };
 		7AF020212B0302CE00AE2376 /* RunBackupAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunBackupAppIntents.swift; sourceTree = "<group>"; };
 		7AF030202B0302CE00AE2376 /* ActivityLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogEntry.swift; sourceTree = "<group>"; };
 		7AF030212B0302CE00AE2376 /* ActivityLogStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogStore.swift; sourceTree = "<group>"; };
-		7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogPresenter.swift; sourceTree = "<group>"; };
 		7AF030222B0302CE00AE2376 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		7AF030232B0302CE00AE2376 /* ArchiveAngelRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelRootView.swift; sourceTree = "<group>"; };
+		7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOutputSettings.swift; sourceTree = "<group>"; };
 		7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
-		7AF010312B0302CE00AE2376 /* ArchiveAngelCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveAngelCoreTests.swift; sourceTree = "<group>"; };
+		7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDiskSpaceEstimator.swift; sourceTree = "<group>"; };
+		7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportIndex.swift; sourceTree = "<group>"; };
+		7AF070202B0302CE00AE2376 /* BackupScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupScope.swift; sourceTree = "<group>"; };
+		7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumScopePickerView.swift; sourceTree = "<group>"; };
+		7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogPresenter.swift; sourceTree = "<group>"; };
+		7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotUITests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +162,7 @@
 				7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */,
 				7AF010222B0302CE00AE2376 /* BackupNaming.swift */,
 				7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */,
+				7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */,
 				7AF070202B0302CE00AE2376 /* BackupScope.swift */,
 				7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */,
 				7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */,
@@ -262,7 +265,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					6B50B9802B0302CB00AE2376 = {
 						CreatedOnToolsVersion = 15.0.1;
@@ -333,6 +336,7 @@
 				7AF010112B0302CE00AE2376 /* AppStateStore.swift in Sources */,
 				7AF010122B0302CE00AE2376 /* BackupNaming.swift in Sources */,
 				7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */,
+				7AF0B0102B0302CE00AE2376 /* BackupExportIndex.swift in Sources */,
 				7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */,
 				7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */,
 				7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */,
@@ -424,6 +428,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -447,6 +452,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -487,6 +493,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -503,6 +510,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -515,9 +523,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "photo-backup-Info.plist";
@@ -533,7 +540,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -550,9 +557,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 15;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "photo-backup-Info.plist";
@@ -568,7 +574,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 2.0.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -581,11 +587,9 @@
 		6B50B9A92B0302CE00AE2376 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -601,11 +605,9 @@
 		6B50B9AA2B0302CE00AE2376 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
@@ -621,10 +623,8 @@
 		6B50B9AC2B0302CE00AE2376 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.krishna.photo-backupUITests";
@@ -639,10 +639,8 @@
 		6B50B9AD2B0302CE00AE2376 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 7BMJ296AXA;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.krishna.photo-backupUITests";

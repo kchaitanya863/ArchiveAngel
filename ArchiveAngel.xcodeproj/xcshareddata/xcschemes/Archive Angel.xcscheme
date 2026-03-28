@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
+   LastUpgradeVersion = "2600"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -89,10 +89,10 @@
             </BuildableReference>
             <SkippedTests>
                <Test
-                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPhone">
+                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPad">
                </Test>
                <Test
-                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPad">
+                  Identifier = "StoreScreenshotUITests/testCaptureStoreScreenshots_iPhone">
                </Test>
             </SkippedTests>
          </TestableReference>

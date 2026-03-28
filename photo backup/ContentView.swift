@@ -20,6 +20,7 @@ struct ContentView: View {
             VStack(spacing: 16) {
                 heroSection
                 chooseBackupFolderCallout
+                exportIndexStatusSection
                 libraryStatsSection
                 diskSpaceSection
                 settingsHintRow
@@ -85,21 +86,49 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder private var exportIndexStatusSection: some View {
+        if viewModel.isExportIndexReindexing || !viewModel.exportIndexStatusDetail.isEmpty {
+            HStack(alignment: .top, spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                    .padding(.top, 2)
+                Text(viewModel.exportIndexStatusDetail.isEmpty ? "Indexing backup folder…" : viewModel.exportIndexStatusDetail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(viewModel.exportIndexStatusDetail)
+        }
+    }
+
     @ViewBuilder private var libraryStatsSection: some View {
         Text("Photos: \(viewModel.totalPhotosCount), videos: \(viewModel.totalVideosCount)")
             .font(.subheadline)
             .accessibilityElement(children: .combine)
 
-        HStack(alignment: .center) {
-            Text(missingCountsLabel)
-                .font(.subheadline)
-                .accessibilityLabel(missingCountsAccessibilityLabel)
+        HStack(alignment: .center, spacing: 10) {
+            if viewModel.isMissingCountsRefreshing {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Scanning library for missing items…")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .accessibilityLabel("Scanning library for items not yet in the backup folder")
+            } else {
+                Text(missingCountsLabel)
+                    .font(.subheadline)
+                    .accessibilityLabel(missingCountsAccessibilityLabel)
+            }
             Spacer(minLength: 8)
             Button {
                 viewModel.refreshMissingCounts()
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
+            .disabled(viewModel.isMissingCountsRefreshing)
             .accessibilityLabel("Refresh missing counts")
         }
         .padding(.horizontal)
@@ -170,12 +199,6 @@ struct ContentView: View {
     @ViewBuilder private var diskSpaceSection: some View {
         if viewModel.state.backupFolderBookmark != nil {
             VStack(alignment: .leading, spacing: 6) {
-                if viewModel.diskSpaceNeededForMissingBytes > 0 {
-                    Text(diskSpaceNeededLabel)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .accessibilityLabel(diskSpaceNeededAccessibilityLabel)
-                }
                 Text(diskSpaceFreeLabel)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -191,22 +214,6 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal)
         }
-    }
-
-    private var diskSpaceNeededLabel: String {
-        let formatted = ByteCountFormatter.string(
-            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
-            countStyle: .file
-        )
-        return "Rough space for new items: \(formatted) (approximate)"
-    }
-
-    private var diskSpaceNeededAccessibilityLabel: String {
-        let formatted = ByteCountFormatter.string(
-            fromByteCount: viewModel.diskSpaceNeededForMissingBytes,
-            countStyle: .file
-        )
-        return "Rough space needed for items not yet backed up: about \(formatted). This is approximate."
     }
 
     private var diskSpaceFreeLabel: String {
@@ -271,22 +278,55 @@ struct ContentView: View {
     }
 
     @ViewBuilder private var backupProgressSection: some View {
-        if viewModel.isBackupInProgress, let thumbnail = viewModel.currentThumbnail {
-            Image(uiImage: thumbnail)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 100)
-                .clipped()
-                .cornerRadius(8)
-                .accessibilityLabel("Current item thumbnail")
-            Text(viewModel.progressMessage)
-                .font(.caption)
-                .lineLimit(2)
-                .truncationMode(.tail)
-                .padding(.horizontal)
-        }
-
         if viewModel.isBackupInProgress {
+            HStack(alignment: .top, spacing: 12) {
+                if viewModel.state.showThumbnail, let thumbnail = viewModel.currentThumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 100, height: 100)
+                        .clipped()
+                        .cornerRadius(8)
+                        .accessibilityLabel("Current item thumbnail")
+                }
+
+                if let p = viewModel.backupLiveProgress {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(p.headline)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .lineLimit(4)
+                            .minimumScaleFactor(0.85)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(backupProgressIOLine(p))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Text(backupProgressCountsLine(p))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .monospacedDigit()
+
+                        Text(backupProgressAssetLine(p))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(p.accessibilitySummary)
+                } else {
+                    Text("Preparing backup…")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal)
+
             ProgressView(value: viewModel.backupProgress, total: 100)
                 .progressViewStyle(.linear)
                 .padding(.horizontal)
@@ -297,6 +337,29 @@ struct ContentView: View {
             .buttonStyle(.bordered)
             .tint(.red)
         }
+    }
+
+    private func backupProgressIOLine(_ p: BackupLiveProgress) -> String {
+        "I/O: \(p.sessionBytesFormatted) · \(p.averageThroughputFormatted) · ETA ~\(p.etaFormatted) · elapsed \(p.elapsedFormatted)"
+    }
+
+    private func backupProgressCountsLine(_ p: BackupLiveProgress) -> String {
+        let rate = p.stepsPerSecond
+        return String(
+            format: "Items: %d written · %d skipped · %d/%d visited · %.2f steps/s",
+            p.filesWritten,
+            p.filesSkipped,
+            p.processedStep,
+            p.totalEligible,
+            rate
+        )
+    }
+
+    private func backupProgressAssetLine(_ p: BackupLiveProgress) -> String {
+        if p.isSkipping {
+            return "Asset: \(p.mediaLabel)"
+        }
+        return "Asset: \(p.mediaLabel) · last write \(p.lastWriteFormatted)"
     }
 
     private func handleAppear() {

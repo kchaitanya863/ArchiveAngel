@@ -90,8 +90,9 @@ struct RunBackupToLastFolderIntent: AppIntent {
                     backupIncrementalEnabled: state.backupIncrementalEnabled,
                     lastBackupDate: state.lastBackupDate,
                     isCanceled: { false },
-                    onProgress: { _, _, _ in },
+                    onProgress: { _ in },
                     onThumbnail: { _ in },
+                    exportIndexStore: BackupExportIndexStore.shared,
                     completion: { result in
                         switch result {
                         case .success(let value):
@@ -127,6 +128,11 @@ struct RunBackupToLastFolderIntent: AppIntent {
         state.totalBackupSize = outcome.totalSizeBytes
         state.lastBackupDate = Date()
         store.save(state)
+        BackupExportIndexStore.shared.setMeta(
+            bookmarkData: state.backupFolderBookmark,
+            layout: state.backupFolderLayout,
+            naming: state.backupFileNaming
+        )
 
         activityLog.append(
             ActivityLogEntry(

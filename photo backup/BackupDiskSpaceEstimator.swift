@@ -114,6 +114,15 @@ enum BackupDiskSpaceEstimator {
             if parent.standardizedFileURL.path == dir.standardizedFileURL.path { break }
             dir = parent
         }
+        // Some external / File Provider locations return nil from `resourceValues` until accessed; `attributesOfFileSystem` often works.
+        var path = fileURL.path
+        if !FileManager.default.fileExists(atPath: path) {
+            path = fileURL.deletingLastPathComponent().path
+        }
+        if let attrs = try? FileManager.default.attributesOfFileSystem(forPath: path),
+           let free = attrs[.systemFreeSize] as? NSNumber {
+            return free.int64Value
+        }
         return nil
     }
 }

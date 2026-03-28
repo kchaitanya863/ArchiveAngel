@@ -24,6 +24,8 @@ final class ArchiveAngelViewModel: ObservableObject {
     @Published var isBackupInProgress = false
     @Published var backupProgress: Double = 0
     @Published var progressMessage = ""
+    /// Rich backup HUD (step counts, I/O, ETA). Nil before first progress tick or after completion.
+    @Published var backupLiveProgress: BackupLiveProgress?
     @Published var currentThumbnail: UIImage?
     @Published var cancelBackupRequested = false
 
@@ -45,6 +47,12 @@ final class ArchiveAngelViewModel: ObservableObject {
     @Published private(set) var diskSpaceNeededForMissingBytes: Int64 = 0
     @Published private(set) var diskSpaceDestinationFreeBytes: Int64?
     @Published private(set) var diskSpaceAssessment: BackupDiskSpaceEstimator.Assessment = .sufficient
+    /// True while scanning the library for missing-from-backup counts (can take a while for huge libraries).
+    @Published private(set) var isMissingCountsRefreshing = false
+    /// True while walking the backup folder to rebuild the SQLite export index.
+    @Published private(set) var isExportIndexReindexing = false
+    /// User-visible status while reindexing (e.g. file count); empty when idle.
+    @Published private(set) var exportIndexStatusDetail: String = ""
 
     @Published private(set) var activityLogEntries: [ActivityLogEntry] = []
 
@@ -54,6 +62,12 @@ final class ArchiveAngelViewModel: ObservableObject {
     private let deduplicationManager = DeduplicationManager()
     private var persistentStateObserver: NSObjectProtocol?
     private var activityLogObserver: NSObjectProtocol?
+
+    /// Matches `BackupManager` (file I/O thread); security-scoped URLs are more reliable when access starts here vs `MainActor`.
+    private static let missingCountsQueue = DispatchQueue(
+        label: "ArchiveAngel.missingCounts",
+        qos: .userInitiated
+    )
 
     /// Backups that finished successfully (in-app or Shortcuts), derived from the log.
     var completedBackupLogCount: Int {
@@ -216,6 +230,9 @@ final class ArchiveAngelViewModel: ObservableObject {
 
     func refreshMissingCounts() {
         guard let url = resolvedBackupFolderURL() else {
+            isMissingCountsRefreshing = false
+            isExportIndexReindexing = false
+            exportIndexStatusDetail = ""
             totalMissingPhotosCount = 0
             totalMissingVideosCount = 0
             diskSpaceNeededForMissingBytes = 0
@@ -224,11 +241,37 @@ final class ArchiveAngelViewModel: ObservableObject {
             return
         }
 
+        let auth = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        switch auth {
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { [weak self] newStatus in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.refreshMediaCounts()
+                    self.refreshMissingCounts()
+                }
+            }
+            return
+        case .denied, .restricted:
+            isMissingCountsRefreshing = false
+            isExportIndexReindexing = false
+            exportIndexStatusDetail = ""
+            totalMissingPhotosCount = 0
+            totalMissingVideosCount = 0
+            diskSpaceNeededForMissingBytes = 0
+            refreshDestinationDiskSpaceOnly(backupFolderURL: url)
+            return
+        case .authorized, .limited:
+            break
+        @unknown default:
+            break
+        }
+
+        let bookmarkData = state.backupFolderBookmark
         let layout = state.backupFolderLayout
         let naming = state.backupFileNaming
         let includePhotos = state.includePhotos
         let includeVideos = state.includeVideos
-        let includeLive = state.includeLivePhotosAsVideo
         let albumIds = state.backupAlbumCollectionLocalIdentifiers
         let incrementalWatermark = BackupScope.effectiveIncrementalWatermark(
             isIncrementalEnabled: state.backupIncrementalEnabled,
@@ -236,13 +279,84 @@ final class ArchiveAngelViewModel: ObservableObject {
         )
         let albumMembers = BackupScope.albumMemberSet(collectionLocalIdentifiers: albumIds)
 
-        DispatchQueue.global(qos: .utility).async {
-            guard url.startAccessingSecurityScopedResource() else { return }
+        isMissingCountsRefreshing = true
+
+        Self.missingCountsQueue.async { [weak self] in
+            guard let self else { return }
+
+            var accessed = url.startAccessingSecurityScopedResource()
+            if !accessed {
+                DispatchQueue.main.sync {
+                    accessed = url.startAccessingSecurityScopedResource()
+                }
+            }
+            guard accessed else {
+                Task { @MainActor in
+                    self.isMissingCountsRefreshing = false
+                    self.isExportIndexReindexing = false
+                    self.exportIndexStatusDetail = ""
+                    self.totalMissingPhotosCount = 0
+                    self.totalMissingVideosCount = 0
+                    self.diskSpaceNeededForMissingBytes = 0
+                    self.diskSpaceDestinationFreeBytes = nil
+                    self.diskSpaceAssessment = .unknownFreeSpace
+                }
+                return
+            }
             defer { url.stopAccessingSecurityScopedResource() }
 
+            let freeBytes = BackupDiskSpaceEstimator.volumeAvailableCapacityBytes(forContainingItemAt: url)
+            Task { @MainActor in
+                self.diskSpaceDestinationFreeBytes = freeBytes
+                self.diskSpaceNeededForMissingBytes = 0
+                self.diskSpaceAssessment = BackupDiskSpaceEstimator.assess(freeBytes: freeBytes, neededBytes: 0)
+            }
+
+            let indexStore = BackupExportIndexStore.shared
+
+            if !indexStore.isIndexValid(bookmarkData: bookmarkData, layout: layout, naming: naming) {
+                Task { @MainActor in
+                    self.isExportIndexReindexing = true
+                    self.exportIndexStatusDetail =
+                        "Your backup folder or export format changed. Scanning files to rebuild the index…"
+                }
+                do {
+                    try indexStore.reindexBackupFolder(rootURL: url, naming: naming) { n in
+                        Task { @MainActor [weak self] in
+                            self?.exportIndexStatusDetail = "Indexing backup folder… \(n) files scanned"
+                        }
+                    }
+                    indexStore.setMeta(bookmarkData: bookmarkData, layout: layout, naming: naming)
+                    Task { @MainActor in
+                        self.isExportIndexReindexing = false
+                        self.exportIndexStatusDetail = ""
+                    }
+                } catch {
+                    Task { @MainActor in
+                        self.isExportIndexReindexing = false
+                        self.exportIndexStatusDetail = ""
+                        self.alert = .init(
+                            title: "Could not rebuild export index",
+                            message:
+                                "Missing counts will use a slower scan. \(error.localizedDescription)"
+                        )
+                    }
+                    self.enumerateMissingCountsUsingFilesystem(
+                        backupURL: url,
+                        layout: layout,
+                        naming: naming,
+                        includePhotos: includePhotos,
+                        includeVideos: includeVideos,
+                        albumMembers: albumMembers,
+                        incrementalWatermark: incrementalWatermark
+                    )
+                    return
+                }
+            }
+
+            let exported = indexStore.allExportedLocalIdentifiers()
             var missingPhotos = 0
             var missingVideos = 0
-            var estimatedBytes: Int64 = 0
             let fetchOptions = PHFetchOptions()
             let assets = PHAsset.fetchAssets(with: fetchOptions)
             assets.enumerateObjects { asset, _, _ in
@@ -255,32 +369,87 @@ final class ArchiveAngelViewModel: ObservableObject {
                 ) {
                     return
                 }
-                let backedUp = BackupNaming.isAssetBackedUp(
-                    asset: asset,
-                    directory: url,
-                    layout: layout,
-                    naming: naming
-                )
-                if !backedUp {
-                    if asset.mediaType == .image { missingPhotos += 1 }
-                    else if asset.mediaType == .video { missingVideos += 1 }
-                }
-                let needsSpaceEstimate = incrementalWatermark != nil || !backedUp
-                if needsSpaceEstimate {
-                    estimatedBytes += BackupDiskSpaceEstimator.estimatedExportBytes(
-                        for: asset,
-                        includeLivePhotosAsVideo: includeLive
-                    )
-                }
+                if exported.contains(asset.localIdentifier) { return }
+                if asset.mediaType == .image { missingPhotos += 1 }
+                else if asset.mediaType == .video { missingVideos += 1 }
             }
-
-            let freeBytes = BackupDiskSpaceEstimator.volumeAvailableCapacityBytes(forContainingItemAt: url)
-            let assessment = BackupDiskSpaceEstimator.assess(freeBytes: freeBytes, neededBytes: estimatedBytes)
 
             Task { @MainActor in
                 self.totalMissingPhotosCount = missingPhotos
                 self.totalMissingVideosCount = missingVideos
-                self.diskSpaceNeededForMissingBytes = estimatedBytes
+                self.isMissingCountsRefreshing = false
+            }
+        }
+    }
+
+    /// Fallback when SQLite reindex fails (still security-scoped `backupURL` must be valid).
+    private func enumerateMissingCountsUsingFilesystem(
+        backupURL: URL,
+        layout: BackupFolderLayout,
+        naming: BackupFileNaming,
+        includePhotos: Bool,
+        includeVideos: Bool,
+        albumMembers: Set<String>?,
+        incrementalWatermark: Date?
+    ) {
+        var missingPhotos = 0
+        var missingVideos = 0
+        let fetchOptions = PHFetchOptions()
+        let assets = PHAsset.fetchAssets(with: fetchOptions)
+        let filenameCache = BackupParentDirectoryFilenameCache()
+        assets.enumerateObjects { asset, _, _ in
+            if !BackupScope.shouldVisitAsset(
+                asset: asset,
+                includePhotos: includePhotos,
+                includeVideos: includeVideos,
+                albumMemberIds: albumMembers,
+                incrementalWatermark: incrementalWatermark
+            ) {
+                return
+            }
+            let backedUp = BackupNaming.isAssetBackedUp(
+                asset: asset,
+                directory: backupURL,
+                layout: layout,
+                naming: naming,
+                parentFilenameCache: filenameCache,
+                matchOriginalFilenameLoosely: true
+            )
+            if !backedUp {
+                if asset.mediaType == .image { missingPhotos += 1 }
+                else if asset.mediaType == .video { missingVideos += 1 }
+            }
+        }
+        Task { @MainActor in
+            self.totalMissingPhotosCount = missingPhotos
+            self.totalMissingVideosCount = missingVideos
+            self.isMissingCountsRefreshing = false
+        }
+    }
+
+    /// Free-space line only (e.g. photo library denied). Runs on the same queue as full missing-count refresh.
+    private func refreshDestinationDiskSpaceOnly(backupFolderURL url: URL) {
+        Self.missingCountsQueue.async { [weak self] in
+            guard let self else { return }
+
+            var accessed = url.startAccessingSecurityScopedResource()
+            if !accessed {
+                DispatchQueue.main.sync {
+                    accessed = url.startAccessingSecurityScopedResource()
+                }
+            }
+            guard accessed else {
+                Task { @MainActor in
+                    self.diskSpaceDestinationFreeBytes = nil
+                    self.diskSpaceAssessment = .unknownFreeSpace
+                }
+                return
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+
+            let freeBytes = BackupDiskSpaceEstimator.volumeAvailableCapacityBytes(forContainingItemAt: url)
+            let assessment = BackupDiskSpaceEstimator.assess(freeBytes: freeBytes, neededBytes: 0)
+            Task { @MainActor in
                 self.diskSpaceDestinationFreeBytes = freeBytes
                 self.diskSpaceAssessment = assessment
             }
@@ -292,13 +461,6 @@ final class ArchiveAngelViewModel: ObservableObject {
     func startBackup() {
         guard let folderURL = resolvedBackupFolderURL() else {
             alert = .init(title: "No folder selected", message: "Please select a folder to back up your photos.")
-            return
-        }
-
-        if case .insufficient = diskSpaceAssessment,
-           let free = diskSpaceDestinationFreeBytes,
-           diskSpaceNeededForMissingBytes > 0 {
-            activeDialog = .lowDiskSpaceBackup(freeBytes: free, neededBytes: diskSpaceNeededForMissingBytes)
             return
         }
 
@@ -319,6 +481,8 @@ final class ArchiveAngelViewModel: ObservableObject {
         backupProgress = 0
         cancelBackupRequested = false
         progressMessage = ""
+        backupLiveProgress = nil
+        currentThumbnail = nil
 
         backupManager.startBackup(
             backupFolderURL: folderURL,
@@ -334,23 +498,32 @@ final class ArchiveAngelViewModel: ObservableObject {
             isCanceled: { [weak self] in
                 self?.cancelBackupRequested ?? false
             },
-            onProgress: { [weak self] processed, total, message in
+            onProgress: { [weak self] progress in
                 guard let self = self else { return }
-                self.backupProgress = BackupProgressMath.percent(processed: processed, total: total)
-                self.progressMessage = message
+                self.backupLiveProgress = progress
+                self.backupProgress = BackupProgressMath.percent(processed: progress.processedStep, total: progress.totalEligible)
+                self.progressMessage = progress.headline
             },
             onThumbnail: { [weak self] image in
                 self?.currentThumbnail = image
             },
+            exportIndexStore: BackupExportIndexStore.shared,
             completion: { [weak self] result in
                 guard let self = self else { return }
                 self.isBackupInProgress = false
                 self.cancelBackupRequested = false
+                self.backupLiveProgress = nil
+                self.currentThumbnail = nil
                 switch result {
                 case .success(let outcome):
                     self.state.totalBackupSize = outcome.totalSizeBytes
                     if !outcome.canceled {
                         self.state.lastBackupDate = Date()
+                        BackupExportIndexStore.shared.setMeta(
+                            bookmarkData: self.state.backupFolderBookmark,
+                            layout: self.state.backupFolderLayout,
+                            naming: self.state.backupFileNaming
+                        )
                     }
                     self.persist()
                     if outcome.canceled {
@@ -408,6 +581,7 @@ final class ArchiveAngelViewModel: ObservableObject {
             switch result {
             case .success(let removed):
                 self.state.totalBackupSize = 0
+                BackupExportIndexStore.shared.clearAll()
                 self.persist()
                 self.recordActivity(
                     kind: .folderCleared,
