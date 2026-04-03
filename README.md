@@ -27,7 +27,7 @@ SwiftUI app for **iPhone and iPad** that exports your Photos library to a folder
 
 | Area | Location |
 |------|----------|
-| UI | `photo backup/ArchiveAngelRootView.swift` (Backup, History, Settings tabs), `ContentView.swift`, `HistoryView.swift`, `BackupSettingsView.swift` |
+| UI | `photo backup/ArchiveAngelRootView.swift` (sidebar on iPad / tab bar on iPhone; `InSidebarKey` environment), `ContentView.swift`, `HistoryView.swift`, `BackupSettingsView.swift` |
 | View model | `photo backup/ArchiveAngelViewModel.swift` |
 | Backup / clear folder | `photo backup/BackupManager.swift` |
 | Dedup scan + delete | `photo backup/DeduplicationManager.swift` |
@@ -105,12 +105,14 @@ Possible enhancements (not committed work—prioritize as you like). Some items 
 
 - **Export presets** — HEIC vs JPEG, quality, max video resolution caps where APIs allow.
 - **Home Screen widget** — e.g. last backup date and approximate “pending” count (with sane refresh rules).
-- **iPad** — Sidebar layout, keyboard shortcuts, more use of horizontal space.
+- **iPad — Sidebar layout** — On iPad and other **regular horizontal size class** environments, the three sections (Backup, History, Settings) appear in a collapsible sidebar (`NavigationView` with `.sidebar` list style) instead of a tab bar. The Backup content is capped to a comfortable reading width (680 pt) and the app icon scales down; child views omit their own `NavigationView` wrapper when hosted in the sidebar so the outer `NavigationView` drives titles, search bars, and toolbars. iPhone and iPad multitasking in compact size class still use the standard tab bar.
+- **Keyboard shortcuts** — Planned via `onKeyCommand` / `keyboardShortcut` (tracked in issues).
 - **macOS target** — Real Mac app with AppKit document APIs (today the project is iOS/iPadOS only).
 
 ### Already in the app (for context)
 
 - Shortcuts intent **Run backup to last folder**, **History** tab with activity log, **Change** backup folder when one is already set, and file-backed **state** + **activity** JSON under Application Support.
+- **iPad sidebar** — Backup, History, and Settings appear in a collapsible sidebar on iPad / regular horizontal size class; compact (iPhone, slide-over) keeps the tab bar. Backup content is width-capped and centered.
 - **Disk space** — Rough size estimate for items not yet in the backup folder, destination free space when readable, on-screen warnings when space looks tight or too small, and a confirmation sheet before starting when the estimate exceeds free space. Missing counts prefer the **SQLite export index** (updated during backup and after a full reindex when the folder or export format changes).
 - **Incremental backup** — Optional “only new or changed since last backup” using the **library** and last successful backup time (not “missing from this folder”), so switching to a new destination only exports items added or edited after that time; turn off for a full copy to an empty folder.
 - **Album scope** — Limit backup, missing counts, and disk estimates to selected user albums and smart albums (e.g. Favorites); leave none selected for the whole library.

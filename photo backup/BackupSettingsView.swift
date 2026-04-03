@@ -4,6 +4,7 @@ import SwiftUI
 /// Advanced backup options: media filters, export layout, and maintenance tools.
 struct BackupSettingsView: View {
     @EnvironmentObject private var viewModel: ArchiveAngelViewModel
+    @Environment(\.inSidebar) private var inSidebar
 
     @State private var includePhotos = true
     @State private var includeVideos = true
@@ -17,21 +18,16 @@ struct BackupSettingsView: View {
     @State private var showAlbumScopePicker = false
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    backupSettingsSection
-                    backupScopeSection
-                    outputLayoutSection
-                    maintenanceSection
+        Group {
+            if inSidebar {
+                settingsContent
+            } else {
+                NavigationView {
+                    settingsContent
                 }
-                .padding(.vertical, 20)
+                .navigationViewStyle(.stack)
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
         }
-        .navigationViewStyle(.stack)
         .onAppear {
             syncFromState()
             reloadPickableAlbums()
@@ -56,6 +52,23 @@ struct BackupSettingsView: View {
                 reloadPickableAlbums()
             }
         }
+    }
+
+    // MARK: - Inner content (shared between sidebar and tab-bar contexts)
+
+    private var settingsContent: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                backupSettingsSection
+                backupScopeSection
+                outputLayoutSection
+                maintenanceSection
+            }
+            .padding(.vertical, 20)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Settings")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private var backupSettingsSection: some View {

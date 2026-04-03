@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var viewModel: ArchiveAngelViewModel
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         mainScrollView
@@ -30,14 +31,19 @@ struct ContentView: View {
                 backupProgressSection
             }
             .padding(.vertical, 24)
+            // On iPad (regular size class), cap the content width and center it so
+            // the layout uses horizontal space sensibly instead of stretching wall-to-wall.
+            .frame(maxWidth: horizontalSizeClass == .regular ? 680 : .infinity)
+            .frame(maxWidth: .infinity)
         }
     }
 
     @ViewBuilder private var heroSection: some View {
+        let iconSize: CGFloat = horizontalSizeClass == .regular ? 120 : 200
         Image("AppHomeIcon")
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: 200, height: 200)
+            .frame(width: iconSize, height: iconSize)
             .accessibilityHidden(true)
     }
 

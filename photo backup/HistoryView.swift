@@ -3,6 +3,7 @@ import UIKit
 
 struct HistoryView: View {
     @EnvironmentObject private var viewModel: ArchiveAngelViewModel
+    @Environment(\.inSidebar) private var inSidebar
 
     @State private var searchText = ""
     @State private var logFilter: ActivityLogListFilter = .all
@@ -11,117 +12,127 @@ struct HistoryView: View {
     @State private var showCopiedFeedback = false
 
     var body: some View {
-        NavigationView {
-            List {
-                overviewSection
+        if inSidebar {
+            historyContent
+        } else {
+            NavigationView {
+                historyContent
+            }
+            .navigationViewStyle(.stack)
+        }
+    }
 
-                if filteredEntries.isEmpty {
+    // MARK: - Inner content (shared between sidebar and tab-bar contexts)
+
+    private var historyContent: some View {
+        List {
+            overviewSection
+
+            if filteredEntries.isEmpty {
+                Section {
+                    emptyStateContent
+                }
+            } else {
+                if !filterSummaryLine.isEmpty {
                     Section {
-                        emptyStateContent
-                    }
-                } else {
-                    if !filterSummaryLine.isEmpty {
-                        Section {
-                            Text(filterSummaryLine)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .listRowBackground(Color.clear)
-                        }
-                    }
-                    ForEach(daySections) { section in
-                        Section {
-                            ForEach(section.entries) { entry in
-                                Button {
-                                    detailEntry = entry
-                                } label: {
-                                    ActivityLogRow(entry: entry)
-                                }
-                                .buttonStyle(.plain)
-                                .accessibilityHint("Show full details and copy options.")
-                            }
-                        } header: {
-                            Text(section.title)
-                        }
+                        Text(filterSummaryLine)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .listRowBackground(Color.clear)
                     }
                 }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("History")
-            .searchable(text: $searchText, prompt: Text("Search summary or details"))
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        ForEach(ActivityLogListFilter.allCases) { f in
+                ForEach(daySections) { section in
+                    Section {
+                        ForEach(section.entries) { entry in
                             Button {
-                                logFilter = f
+                                detailEntry = entry
                             } label: {
-                                if logFilter == f {
-                                    Label(f.menuTitle, systemImage: "checkmark")
-                                } else {
-                                    Text(f.menuTitle)
-                                }
+                                ActivityLogRow(entry: entry)
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Show full details and copy options.")
                         }
-                    } label: {
-                        Label(logFilter.menuTitle, systemImage: "line.3.horizontal.decrease.circle")
+                    } header: {
+                        Text(section.title)
                     }
-                    .accessibilityLabel("Activity filter, \(logFilter.menuTitle)")
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            shareFilteredLog()
-                        } label: {
-                            Label("Share log…", systemImage: "square.and.arrow.up")
-                        }
-                        .disabled(filteredEntries.isEmpty)
-                        Button {
-                            copyFilteredLog()
-                        } label: {
-                            Label("Copy log to clipboard", systemImage: "doc.on.doc")
-                        }
-                        .disabled(filteredEntries.isEmpty)
-                        Divider()
-                        Button(role: .destructive) {
-                            confirmClearLog = true
-                        } label: {
-                            Label("Clear all activity", systemImage: "trash")
-                        }
-                        .disabled(viewModel.activityLogEntries.isEmpty)
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                    .accessibilityLabel("Log actions")
-                }
-            }
-            .refreshable {
-                viewModel.refreshActivityLog()
-            }
-            .onAppear {
-                viewModel.refreshActivityLog()
-            }
-            .confirmationDialog(
-                "Clear all activity entries?",
-                isPresented: $confirmClearLog,
-                titleVisibility: .visible
-            ) {
-                Button("Clear log", role: .destructive) {
-                    viewModel.clearActivityLog()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This removes saved history only. Your backup folder, bookmarks, and settings stay as they are.")
-            }
-            .sheet(item: $detailEntry) { entry in
-                ActivityLogDetailSheet(entry: entry) {
-                    detailEntry = nil
-                }
-            }
-            .alert("Copied to clipboard", isPresented: $showCopiedFeedback) {
-                Button("OK", role: .cancel) {}
             }
         }
-        .navigationViewStyle(.stack)
+        .listStyle(.insetGrouped)
+        .navigationTitle("History")
+        .searchable(text: $searchText, prompt: Text("Search summary or details"))
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Menu {
+                    ForEach(ActivityLogListFilter.allCases) { f in
+                        Button {
+                            logFilter = f
+                        } label: {
+                            if logFilter == f {
+                                Label(f.menuTitle, systemImage: "checkmark")
+                            } else {
+                                Text(f.menuTitle)
+                            }
+                        }
+                    }
+                } label: {
+                    Label(logFilter.menuTitle, systemImage: "line.3.horizontal.decrease.circle")
+                }
+                .accessibilityLabel("Activity filter, \(logFilter.menuTitle)")
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button {
+                        shareFilteredLog()
+                    } label: {
+                        Label("Share log…", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(filteredEntries.isEmpty)
+                    Button {
+                        copyFilteredLog()
+                    } label: {
+                        Label("Copy log to clipboard", systemImage: "doc.on.doc")
+                    }
+                    .disabled(filteredEntries.isEmpty)
+                    Divider()
+                    Button(role: .destructive) {
+                        confirmClearLog = true
+                    } label: {
+                        Label("Clear all activity", systemImage: "trash")
+                    }
+                    .disabled(viewModel.activityLogEntries.isEmpty)
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityLabel("Log actions")
+            }
+        }
+        .refreshable {
+            viewModel.refreshActivityLog()
+        }
+        .onAppear {
+            viewModel.refreshActivityLog()
+        }
+        .confirmationDialog(
+            "Clear all activity entries?",
+            isPresented: $confirmClearLog,
+            titleVisibility: .visible
+        ) {
+            Button("Clear log", role: .destructive) {
+                viewModel.clearActivityLog()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes saved history only. Your backup folder, bookmarks, and settings stay as they are.")
+        }
+        .sheet(item: $detailEntry) { entry in
+            ActivityLogDetailSheet(entry: entry) {
+                detailEntry = nil
+            }
+        }
+        .alert("Copied to clipboard", isPresented: $showCopiedFeedback) {
+            Button("OK", role: .cancel) {}
+        }
     }
 
     private var allEntries: [ActivityLogEntry] {

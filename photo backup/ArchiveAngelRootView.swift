@@ -1,23 +1,52 @@
 import SwiftUI
 
+// MARK: - Sidebar environment key
+
+/// Set to `true` when a view is hosted inside the iPad sidebar's detail pane so it
+/// can skip its own `NavigationView` wrapper (the sidebar already provides one).
+struct InSidebarKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var inSidebar: Bool {
+        get { self[InSidebarKey.self] }
+        set { self[InSidebarKey.self] = newValue }
+    }
+}
+
+// MARK: - Sidebar destination
+
+private enum SidebarItem: String, Hashable, CaseIterable {
+    case backup = "Backup"
+    case history = "History"
+    case settings = "Settings"
+
+    var icon: String {
+        switch self {
+        case .backup: return "externaldrive.fill.badge.icloud"
+        case .history: return "clock.arrow.circlepath"
+        case .settings: return "gearshape.fill"
+        }
+    }
+}
+
+// MARK: - Root view
+
 struct ArchiveAngelRootView: View {
     @EnvironmentObject private var viewModel: ArchiveAngelViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    @State private var sidebarSelection: SidebarItem? = .backup
 
     var body: some View {
-        TabView {
-            ContentView()
-                .tabItem {
-                    Label("Backup", systemImage: "externaldrive.fill.badge.icloud")
-                }
-            HistoryView()
-                .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
-                }
-            BackupSettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape.fill")
-                }
+        Group {
+            if horizontalSizeClass == .regular {
+                sidebarBody
+            } else {
+                tabBody
+            }
         }
         .onChange(of: scenePhase) { phase in
             if phase == .active {
@@ -124,6 +153,58 @@ struct ArchiveAngelRootView: View {
             }
         )
     }
+
+    // MARK: - Sidebar layout (iPad / regular horizontal size class)
+
+    private var sidebarBody: some View {
+        NavigationView {
+            List {
+                NavigationLink(tag: SidebarItem.backup, selection: $sidebarSelection) {
+                    ContentView()
+                } label: {
+                    Label("Backup", systemImage: SidebarItem.backup.icon)
+                }
+                NavigationLink(tag: SidebarItem.history, selection: $sidebarSelection) {
+                    HistoryView()
+                        .environment(\.inSidebar, true)
+                } label: {
+                    Label("History", systemImage: SidebarItem.history.icon)
+                }
+                NavigationLink(tag: SidebarItem.settings, selection: $sidebarSelection) {
+                    BackupSettingsView()
+                        .environment(\.inSidebar, true)
+                } label: {
+                    Label("Settings", systemImage: SidebarItem.settings.icon)
+                }
+            }
+            .listStyle(.sidebar)
+            .navigationTitle("Archive Angel")
+
+            // Default detail view shown before any sidebar selection
+            ContentView()
+        }
+    }
+
+    // MARK: - Tab layout (iPhone / compact horizontal size class)
+
+    private var tabBody: some View {
+        TabView {
+            ContentView()
+                .tabItem {
+                    Label("Backup", systemImage: SidebarItem.backup.icon)
+                }
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: SidebarItem.history.icon)
+                }
+            BackupSettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: SidebarItem.settings.icon)
+                }
+        }
+    }
+
+    // MARK: - Low disk space message
 
     @ViewBuilder
     private var lowDiskSpaceBackupMessage: some View {
