@@ -62,6 +62,7 @@ struct BackupSettingsView: View {
                 backupSettingsSection
                 backupScopeSection
                 outputLayoutSection
+                aboutSection
                 maintenanceSection
             }
             .padding(.vertical, 20)
@@ -188,6 +189,41 @@ struct BackupSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
             Label("Output layout & filenames", systemImage: "folder.badge.gearshape")
+        }
+        .padding(.horizontal)
+    }
+
+    private var aboutSection: some View {
+        GroupBox {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Archive Angel helps you export your Photos library to a folder you choose, with optional duplicate photo cleanup after review.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Link(destination: URL(string: "https://forms.gle/FbM4bJ3dz5PpiFA19")!) {
+                    Label("Share feedback", systemImage: "bubble.left.and.bubble.right")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Link(destination: URL(string: "https://github.com/kchaitanya863/ArchiveAngel/issues")!) {
+                    Label("Create an issue", systemImage: "exclamationmark.bubble")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Link(destination: URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!) {
+                    Label("Contribute to open source", systemImage: "hammer")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Link(destination: URL(string: "https://github.com/kchaitanya863/ArchiveAngel")!) {
+                    Label("View source code", systemImage: "chevron.left.forwardslash.chevron.right")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        } label: {
+            Label("About", systemImage: "info.circle")
         }
         .padding(.horizontal)
     }

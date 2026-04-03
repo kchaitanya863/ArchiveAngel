@@ -33,11 +33,11 @@
 		7AF040102B0302CE00AE2376 /* BackupOutputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */; };
 		7AF050102B0302CE00AE2376 /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */; };
 		7AF060102B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */; };
-		7AF0B0102B0302CE00AE2376 /* BackupExportIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */; };
 		7AF070102B0302CE00AE2376 /* BackupScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF070202B0302CE00AE2376 /* BackupScope.swift */; };
 		7AF080102B0302CE00AE2376 /* AlbumScopePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */; };
 		7AF090102B0302CE00AE2376 /* ActivityLogPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */; };
 		7AF093102B0302CE00AE2376 /* StoreScreenshotUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */; };
+		7AF0B0102B0302CE00AE2376 /* BackupExportIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,11 +88,11 @@
 		7AF040202B0302CE00AE2376 /* BackupOutputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOutputSettings.swift; sourceTree = "<group>"; };
 		7AF050202B0302CE00AE2376 /* BackupSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSettingsView.swift; sourceTree = "<group>"; };
 		7AF060202B0302CE00AE2376 /* BackupDiskSpaceEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupDiskSpaceEstimator.swift; sourceTree = "<group>"; };
-		7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportIndex.swift; sourceTree = "<group>"; };
 		7AF070202B0302CE00AE2376 /* BackupScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupScope.swift; sourceTree = "<group>"; };
 		7AF080202B0302CE00AE2376 /* AlbumScopePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumScopePickerView.swift; sourceTree = "<group>"; };
 		7AF090202B0302CE00AE2376 /* ActivityLogPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogPresenter.swift; sourceTree = "<group>"; };
 		7AF093202B0302CE00AE2376 /* StoreScreenshotUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotUITests.swift; sourceTree = "<group>"; };
+		7AF0B0202B0302CE00AE2376 /* BackupExportIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupExportIndex.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -523,7 +523,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -540,7 +540,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -557,7 +557,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_ASSET_PATHS = "\"photo backup/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -574,7 +574,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.0.1;
+				MARKETING_VERSION = 2.0.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.krishna.archiveAngel;
 				PRODUCT_MODULE_NAME = photo_backup;
 				PRODUCT_NAME = "$(TARGET_NAME)";
